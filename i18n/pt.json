@@ -1,9 +1,0 @@
-{
-	"@metadata": {
-		"authors": [
-			"Vitorvicentevalente"
-		]
-	},
-	"multimaps-method-error-unknown-action": "$1: Ação desconhecida",
-	"multimaps-method-error-unexpected-result": "$1: Resultado inesperado de uma função"
-}

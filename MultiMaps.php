@@ -83,22 +83,6 @@ $wgResourceModules['ext.MultiMaps.Leaflet'] = array(
 	'remoteExtPath' => 'MultiMaps/services/Leaflet',
 	);
 
-// Google service
-$wgAutoloadClasses["MultiMaps\Google"] =  $dir . '/services/Google/Google.php';
-$wgResourceModules['ext.MultiMaps.Google'] = array(
-	'scripts' => array( 'ext.google.js' ),
-	'localBasePath' => $dir . '/services/Google',
-	'remoteExtPath' => 'MultiMaps/services/Google',
-	);
-
-// Yandex service
-$wgAutoloadClasses["MultiMaps\Yandex"] =  $dir . '/services/Yandex/Yandex.php';
-$wgResourceModules['ext.MultiMaps.Yandex'] = array(
-	'scripts' => array( 'ext.yandex.js' ),
-	'localBasePath' => $dir . '/services/Yandex',
-	'remoteExtPath' => 'MultiMaps/services/Yandex',
-	);
-
 /**
  * Add files to phpunit test
  * @codeCoverageIgnore
@@ -111,8 +95,6 @@ $wgHooks['UnitTestsList'][] = function ( &$files ) {
 		$files[] = __DIR__ . '/tests/phpunit/includes/PointTest.php';
 		$files[] = __DIR__ . '/tests/phpunit/includes/mapelements/PolygonTest.php';
 		$files[] = __DIR__ . '/tests/phpunit/includes/mapelements/RectangleTest.php';
-		$files[] = __DIR__ . '/tests/phpunit/services/Google/GoogleTest.php';
 		$files[] = __DIR__ . '/tests/phpunit/services/Leaflet/LeafletTest.php';
-		$files[] = __DIR__ . '/tests/phpunit/services/Yandex/YandexTest.php';
 		return true;
 };

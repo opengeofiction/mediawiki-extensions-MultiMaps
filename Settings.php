@@ -25,8 +25,6 @@ $egMultiMaps_AllowGeocoderTests = false;
 // Values may be a valid name of class based on class BaseMapService
 $egMultiMaps_MapServices = array(
 	'Leaflet',
-	'Google',
-	'Yandex',
 );
 
 // Integer. The default zoom of a map. This value will only be used when the
@@ -49,6 +47,3 @@ $egMultiMaps_IconAllowFromDirectory = false;
 // String. The URL base path to the directory containing icons for markers
 $egMultiMaps_IconPath = "$wgScriptPath/mapicons";
 
-//TODO
-//$egMultiMaps_GoogleApiKey = false;
-//$egMultiMaps_YandexApiKey = false;
