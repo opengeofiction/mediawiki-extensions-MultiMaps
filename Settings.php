@@ -24,6 +24,7 @@ $egMultiMaps_AllowGeocoderTests = false;
 // Firs value - default service, which will be used if the service is not in the parameters
 // Values may be a valid name of class based on class BaseMapService
 $egMultiMaps_MapServices = array(
+	'OGF',    
 	'Leaflet',
 	'Google',
 	'Yandex',

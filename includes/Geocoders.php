@@ -13,6 +13,9 @@ class Geocoders {
 
 	public static function getCoordinates($address, $service, $params = null) {
 		switch ($service) {
+			case 'ogf':
+				return self::getCoordinatesUseOGFNominatim($address, $params);
+				break;
 			case 'google':
 				return self::getCoordinatesUseGoogle($address);
 				break;

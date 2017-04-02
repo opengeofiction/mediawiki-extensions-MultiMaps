@@ -46,7 +46,7 @@ class Line extends BaseMapElement {
 
 		$array = explode( $egMultiMaps_CoordinatesSeparator, $coordinates);
 
-		if( $service == 'leaflet' && count($array) == 1 ) {
+		if( ($service == 'leaflet' || $service == 'ogf') && count($array) == 1 ) {
 			$value = $array[0];
 			$coord = Geocoders::getCoordinates( $value, $service, array('polygon'=>true) );
 			if( $coord !== false && is_array($coord['polygon']) ) {
