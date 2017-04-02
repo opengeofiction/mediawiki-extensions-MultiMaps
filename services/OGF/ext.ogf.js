@@ -141,7 +141,7 @@ mediaWiki.MultiMapsOGF = {
             ogfOptions.layers = options.layers;
         }
         if (options.overlays) {
-            ogfOptions.layer = options.overlays;
+            ogfOptions.overlays = options.overlays;
         }
         if (options.layer) {
             ogfOptions.layer = options.layer;

@@ -46,7 +46,7 @@ ogf.map = function( leafletMap, options ){
 	overlaysEnabled = overlaysEnabled.split(/,/);
 
 	var baseMapActive = options.layer || baseMapsEnabled[0];
-	var i, baseMaps = {}, overlayMaps = {}, hOverlaysActive = {}, keyB, keyO;
+	var baseMaps = {}, overlayMaps = (overlaysEnabled.length > 0)? {} : null, hOverlaysActive = {}, i, keyB, keyO;
 
 	for( i = 0; i < baseMapsEnabled.length; ++i ){
 		keyB = baseMapsEnabled[i];
