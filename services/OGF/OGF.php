@@ -25,9 +25,10 @@ class OGF extends BaseMapService {
 
 		global $egMultiMapsScriptPath;
 		$leafletPath = $egMultiMapsScriptPath . '/services/Leaflet/leaflet';
+		$ogfPath     = $egMultiMapsScriptPath . '/services/OGF';
 		$this->headerItem .= \Html::linkedStyle( "$leafletPath/leaflet.css" ) .
 			'<!--[if lte IE 8]>' . \Html::linkedStyle( "$leafletPath/leaflet.ie.css" ). '<![endif]-->' .
 			\Html::linkedScript( "$leafletPath/leaflet.js" ) . 
-			\Html::linkedScript( "/services/OGF/OGFUtil.js" );
+			\Html::linkedScript( "$ogfPath/OGFUtil.js" );
 	}
 }

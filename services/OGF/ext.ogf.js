@@ -6,7 +6,7 @@
  */
 
 /*global L, mediaWiki */
-mediaWiki.MultiMapsLeaflet = {
+mediaWiki.MultiMapsOGF = {
 	/**
 	* Convert properties given from multimaps extension to options of map element
 	* @param {Object} properties Contains the fields lat, lon, title, text and icon
@@ -201,9 +201,9 @@ mediaWiki.MultiMapsLeaflet = {
 
 	$(document).ready(function () {
 		mw.loader.using('ext.MultiMaps', function () {
-			$('.multimaps-map-leaflet').each(function () {
+			$('.multimaps-map-ogf').each(function () {
 				var $this = $(this);
-				mw.MultiMapsLeaflet.setup($this.get(0), $.parseJSON($this.find('div').text()));
+				mw.MultiMapsOGF.setup($this.get(0), $.parseJSON($this.find('div').text()));
 			});
 		});
 	});
