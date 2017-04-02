@@ -136,6 +136,7 @@ abstract class BaseMapService {
 		'fillcolor',
 		'fillopacity',
 		'fill',
+		'layer',
 	);
 
 	/**
