@@ -129,7 +129,7 @@ mediaWiki.MultiMapsOGF = {
 
 	setup: function (element, options) {
 		var map, i, mapOptions = {};
-		var OGF = OGFUtil(), ogfMap;
+		var OGF = OGFUtil(), ogfMap, ogfOptions = {};
         var initLayer = 'Standard';
 
 		if (options.minzoom !== false) {
@@ -138,13 +138,18 @@ mediaWiki.MultiMapsOGF = {
 		if (options.maxzoom !== false) {
 			mapOptions.maxZoom = options.maxzoom;
 		}
+        if (options.layers) {
+            ogfOptions.layers = options.layers;
+        }
+        if (options.overlays) {
+            ogfOptions.layer = options.overlays;
+        }
         if (options.layer) {
-            initLayer = options.layer;
-            console.log( "initLayer <" + initLayer + ">" );  // _DEBUG_
+            ogfOptions.layer = options.layer;
         }
 
 		map = L.map( element, mapOptions ).fitWorld();
-		var ogfMap = OGF.map( map, mapOptions );
+		var ogfMap = OGF.map( map, ogfOptions );
 
 		// Add the markers.
 		if (options.markers !== undefined) {

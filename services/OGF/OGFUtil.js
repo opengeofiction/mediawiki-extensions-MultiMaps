@@ -35,30 +35,41 @@ ogf.map = function( leafletMap, options ){
 		    maxZoom: 14,
 		},
 	};
-	var baseMapsEnabled = options.layers || [ 'Standard', 'TopoMap', 'Histor' ];
-	var baseMapActive   = options.layer || baseMapsEnabled[0];
-
 	var overlaysAvailable = {
 		'Coastline Errors': './CoastlineErrors.js',
 		'Territories':      './Territories.js',
 	};
-	var overlaysEnabled = options.overlays || [];
+	var baseMapsEnabled = options.layers   || 'Standard,TopoMap,Histor';
+	var overlaysEnabled = options.overlays || '';
 
-	var i, baseMaps = {}, overlayMaps = {};
+	baseMapsEnabled = baseMapsEnabled.split(/,/);
+	overlaysEnabled = overlaysEnabled.split(/,/);
+
+	var baseMapActive = options.layer || baseMapsEnabled[0];
+	var i, baseMaps = {}, overlayMaps = {}, hOverlaysActive = {}, keyB, keyO;
 
 	for( i = 0; i < baseMapsEnabled.length; ++i ){
-		var keyB  = baseMapsEnabled[i];
+		keyB  = baseMapsEnabled[i];
         var layerOpt = baseMapsAvailable[keyB];
 		baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
-	}
-	for( i = 0; i < overlaysEnabled.length; ++i ){
-		var keyO = overlaysEnabled[i];
-		overlayMaps[keyO] = L.layerGroup();
 	}
 
 	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
     baseMaps[baseMapActive].addTo( self._map );
 
+	for( i = 0; i < overlaysEnabled.length; ++i ){
+		keyO = overlaysEnabled[i];
+		if( keyO.match(/^\+/) ){
+            keyO = keyO.replace(/^\+/,'');
+			hOverlaysActive[keyO] = true;
+        }
+		overlayMaps[keyO] = L.layerGroup();
+	}
+	for( keyO in hOverlaysActive ){
+        overlayMaps[keyO].addTo( self._map );
+	}
+
+/*
 	map.on( 'overlayadd', function(ev){
 //		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
 		if( overlayEvents[ev.name] && overlayEvents[ev.name][0] ){
@@ -72,7 +83,7 @@ ogf.map = function( leafletMap, options ){
 			funcRemove( ev.name, ev.layer );
 		}
 	} );
-
+*/
 };
 
 ogf.parseUrlParam = function( str ){
