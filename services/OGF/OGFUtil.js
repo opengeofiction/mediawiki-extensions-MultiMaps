@@ -49,13 +49,14 @@ ogf.map = function( leafletMap, options ){
 	var i, baseMaps = {}, overlayMaps = {}, hOverlaysActive = {}, keyB, keyO;
 
 	for( i = 0; i < baseMapsEnabled.length; ++i ){
-		keyB  = baseMapsEnabled[i];
+		keyB = baseMapsEnabled[i];
+		if( keyB.match(/^\+/) ){
+            keyB = keyB.replace(/^\+/,'');
+			baseMapActive = keyB;
+        }
         var layerOpt = baseMapsAvailable[keyB];
 		baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
 	}
-
-	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
-    baseMaps[baseMapActive].addTo( self._map );
 
 	for( i = 0; i < overlaysEnabled.length; ++i ){
 		keyO = overlaysEnabled[i];
@@ -65,9 +66,14 @@ ogf.map = function( leafletMap, options ){
         }
 		overlayMaps[keyO] = L.layerGroup();
 	}
+
+	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
+    baseMaps[baseMapActive].addTo( self._map );
+
 	for( keyO in hOverlaysActive ){
         overlayMaps[keyO].addTo( self._map );
 	}
+
 
 /*
 	map.on( 'overlayadd', function(ev){
