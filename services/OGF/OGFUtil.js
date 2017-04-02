@@ -19,19 +19,19 @@ ogf.map = function( leafletMap, options ){
 
 	var baseMapsAvailable = {
 		Standard: {
-		    tileUrl: TILESERVER_URL +'/osmcarto/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILESERVER_URL +'/osmcarto/{z}/{x}/{y}.png',
 		    maxZoom: 19,
 		},
 		TopoMap: {
-		    tileUrl: TILESERVER_URL +'/topomap/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILESERVER_URL +'/topomap/{z}/{x}/{y}.png',
 		    maxZoom: 17,
 		},
 		Histor: {
-		    tileUrl: TILESERVER_URL +'/tiles-histor/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILESERVER_URL +'/tiles-histor/{z}/{x}/{y}.png',
 		    maxZoom: 18,
 		},
 		Roantra: {
-		    tileUrl: TILESERVER_URL +'/planet/Roantra/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILESERVER_URL +'/planet/Roantra/{z}/{x}/{y}.png',
 		    maxZoom: 14,
 		},
 	};
@@ -42,15 +42,18 @@ ogf.map = function( leafletMap, options ){
 		'Coastline Errors': './CoastlineErrors.js',
 		'Territories':      './Territories.js',
 	};
-	var overlaysEnabled = option.overlays || [];
+	var overlaysEnabled = options.overlays || [];
 
-	var baseMaps = {}, overlayMaps = {};
-	for( var keyB in baseMapsEnabled ){
+	var i, baseMaps = {}, overlayMaps = {};
+
+	for( i = 0; i < baseMapsEnabled.length; ++i ){
+		var keyB  = baseMapsEnabled[i];
         var layerOpt = baseMapsAvailable[keyB];
-		baseMaps[key] = L.tileLayer( layerOpt.tileUrl, layerOpt );
+		baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
 	}
-	for( var keyO in overlaysEnabled ){
-		overlayMaps[key] = L.layerGroup();
+	for( i = 0; i < overlaysEnabled.length; ++i ){
+		var keyO = overlaysEnabled[i];
+		overlayMaps[keyO] = L.layerGroup();
 	}
 
 	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
@@ -417,4 +420,5 @@ ogf.scale2zoom = function( scale, lat, pxpt ){
 return ogf;
 
 }
+
 
