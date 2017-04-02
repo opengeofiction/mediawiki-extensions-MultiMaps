@@ -1,17 +1,17 @@
 <?php
 namespace MultiMaps;
 /**
- * This groupe contains all Leaflet related files of the MultiMaps extension.
+ * This groupe contains all OGF related files of the MultiMaps extension.
  *
- * @defgroup Leaflet
+ * @defgroup OGF
  * @ingroup MultiMaps
  */
 
 /**
  *
  *
- * @file Leaflet.php
- * @ingroup Leaflet
+ * @file OGF.php
+ * @ingroup OGF
  *
  * @licence GNU GPL v2+
  * @author Pavel Astakhov < pastakhov@yandex.ru >
@@ -20,8 +20,8 @@ class Leaflet extends BaseMapService {
 
 	function __construct() {
 		parent::__construct();
-		$this->classname="leaflet";
-		$this->resourceModules[] = 'ext.MultiMaps.Leaflet';
+		$this->classname="ogf";
+		$this->resourceModules[] = 'ext.MultiMaps.OGF';
 
 		global $egMultiMapsScriptPath;
 		$leafletPath = $egMultiMapsScriptPath . '/services/Leaflet/leaflet';
