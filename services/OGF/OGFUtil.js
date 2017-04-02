@@ -11,8 +11,6 @@ var ogf = {
 
 //--------------------------------------------------------------------------------------------------
 
-
-
 ogf.map = function( leafletMap, options ){
 	var self = this;
 	self._map = leafletMap;
@@ -39,11 +37,11 @@ ogf.map = function( leafletMap, options ){
 		'Coastline Errors': './CoastlineErrors.js',
 		'Territories':      './Territories.js',
 	};
-	var baseMapsEnabled = options.layers   || 'Standard,TopoMap,Histor';
-	var overlaysEnabled = options.overlays || '';
+	var baseMapsEnabled = options.layers   || [ 'Standard', 'TopoMap', 'Histor' ];
+	var overlaysEnabled = options.overlays || [];
 
-	baseMapsEnabled = baseMapsEnabled.split(/,/);
-	overlaysEnabled = overlaysEnabled.split(/,/);
+	if( ! Array.isArray(baseMapsEnabled) )  baseMapsEnabled = baseMapsEnabled.split(/,/);
+	if( ! Array.isArray(overlaysEnabled) )  overlaysEnabled = overlaysEnabled.split(/,/);
 
 	var baseMapActive = options.layer || baseMapsEnabled[0];
 	var baseMaps = {}, overlayMaps = (overlaysEnabled.length > 0)? {} : null, hOverlaysActive = {}, i, keyB, keyO;
