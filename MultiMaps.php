@@ -78,7 +78,7 @@ $wgResourceModules['ext.MultiMaps'] = array(
 // OGF service
 $wgAutoloadClasses["MultiMaps\OGF"] =  $dir . '/services/OGF/OGF.php';
 $wgResourceModules['ext.MultiMaps.OGF'] = array(
-	'scripts' => array( 'OGFUtil.js', 'ext.ogf.js' ),
+	'scripts' => array( 'ext.ogf.js' ),
 	'localBasePath' => $dir . '/services/OGF',
 	'remoteExtPath' => 'MultiMaps/services/OGF',
 	);

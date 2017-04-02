@@ -143,8 +143,8 @@ mediaWiki.MultiMapsLeaflet = {
             console.log( "initLayer <" + initLayer + ">" );  // _DEBUG_
         }
 
-		map = L.map(element, mapOptions).fitWorld();
-		var ogfMap = OGF.map( map );		
+		map = L.map( element, mapOptions ).fitWorld();
+		var ogfMap = OGF.map( map, mapOptions );
 
 		// Add the markers.
 		if (options.markers !== undefined) {
