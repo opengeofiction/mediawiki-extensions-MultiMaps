@@ -137,6 +137,9 @@ abstract class BaseMapService {
 		'fillopacity',
 		'fill',
 		'layer',
+		'layers',
+		'overlays',
+		'mapdata',
 	);
 
 	/**

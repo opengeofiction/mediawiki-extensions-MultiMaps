@@ -130,7 +130,6 @@ mediaWiki.MultiMapsOGF = {
 	setup: function (element, options) {
 		var map, i, mapOptions = {};
 		var OGF = OGFUtil(), ogfMap, ogfOptions = {};
-        var initLayer = 'Standard';
 
 		if (options.minzoom !== false) {
 			mapOptions.minZoom = options.minzoom;
@@ -146,6 +145,9 @@ mediaWiki.MultiMapsOGF = {
         }
         if (options.layer) {
             ogfOptions.layer = options.layer;
+        }
+        if (options.mapdata) {
+            ogfOptions.mapdata = options.mapdata;
         }
 
 		map = L.map( element, mapOptions ).fitWorld();
