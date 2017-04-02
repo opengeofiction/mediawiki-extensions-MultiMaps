@@ -45,18 +45,16 @@ ogf.map = function( leafletMap, options ){
 	var overlaysEnabled = option.overlays || [];
 
 	var baseMaps = {}, overlayMaps = {};
-
 	for( var keyB in baseMapsEnabled ){
         var layerOpt = baseMapsAvailable[keyB];
 		baseMaps[key] = L.tileLayer( layerOpt.tileUrl, layerOpt );
 	}
-
 	for( var keyO in overlaysEnabled ){
 		overlayMaps[key] = L.layerGroup();
 	}
 
 	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
-
+    baseMaps[baseMapActive].addTo( self._map );
 
 	map.on( 'overlayadd', function(ev){
 //		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
