@@ -129,7 +129,6 @@ mediaWiki.MultiMapsLeaflet = {
 
 	setup: function (element, options) {
 		var map, i, mapOptions = {};
-        var initLayer = 'Standard';
 
 		if (options.minzoom !== false) {
 			mapOptions.minZoom = options.minzoom;
@@ -137,30 +136,13 @@ mediaWiki.MultiMapsLeaflet = {
 		if (options.maxzoom !== false) {
 			mapOptions.maxZoom = options.maxzoom;
 		}
-        if (options.layer) {
-            initLayer = options.layer;
-            console.log( "initLayer <" + initLayer + ">" );  // _DEBUG_
-        }
 
 		map = L.map(element, mapOptions).fitWorld();
 
-        var TILESERVER_URL = 'http://tile.opengeofiction.net';
-        var baseMaps = {
-            Standard: 'osmcarto',
-            TopoMap:  'topomap',
-            Histor:   'tiles-histor',
-        };
-        for( var key in baseMaps ){
-            baseMaps[key] = L.tileLayer( TILESERVER_URL +'/'+ baseMaps[key] + '/{z}/{x}/{y}.png' );
-        }
-
-        L.control.layers( baseMaps ).addTo( map );
-        baseMaps[initLayer].addTo( map );
-
-//		// add an OpenStreetMap tile layer
-//		L.tileLayer('//tile.openstreetmap.org/{z}/{x}/{y}.png', {
-//			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-//		}).addTo(map);
+		// add an OpenStreetMap tile layer
+		L.tileLayer('//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		}).addTo(map);
 
 		// Add the markers.
 		if (options.markers !== undefined) {
