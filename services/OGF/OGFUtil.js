@@ -81,19 +81,18 @@ ogf.map = function( leafletMap, options ){
 		overlayDefinitions = JSON.parse( options.overlaydef );
 	}
 
-	if( ! overlayDefinitions.Territories ){
-		overlayDefinitions.Territories = [
-			{url: '/data/ogf_territories.json', key:    'ogfId'},
-			{url: '/data/ogf_polygons.json',    wrap:   'polygon'},
-			{url: '/data/ogf_template.json',    select: ['status','constraints']},
-		];
-	}
-	if( ! overlayDefinitions['Coastline Errors'] ){
-		overlayDefinitions['Coastline Errors'] = [
-		    {url: '/util-data/costaline_errors.js', key: 'ogfId'},
-		];
-	}
-//  overlayDefinitions = ogf.parseOverlayDefinitions( overlayDefinitions );
+//	if( ! overlayDefinitions.Territories ){
+//		overlayDefinitions.Territories = [
+//			{url: '/data/ogf_territories.json', key:    'ogfId'},
+//			{url: '/data/ogf_polygons.json',    wrap:   'polygon'},
+//			{url: '/data/ogf_template.json',    select: ['status','constraints']},
+//		];
+//	}
+//	if( ! overlayDefinitions['Coastline Errors'] ){
+//		overlayDefinitions['Coastline Errors'] = [
+//		    {url: '/util-data/costaline_errors.js', key: 'ogfId'},
+//		];
+//	}
 
 	self._map.on( 'overlayadd', function(ev){
 //		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
@@ -229,7 +228,7 @@ ogf.drawLayerObjects = function( layer, hObjects ){
                 L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
             }
 		}
-		delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
+//		delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 	}
 };
 
