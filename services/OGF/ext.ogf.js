@@ -140,11 +140,14 @@ mediaWiki.MultiMapsOGF = {
         if (options.layers) {
             ogfOptions.layers = options.layers;
         }
+        if (options.layer) {
+            ogfOptions.layer = options.layer;
+        }
         if (options.overlays) {
             ogfOptions.overlays = options.overlays;
         }
-        if (options.layer) {
-            ogfOptions.layer = options.layer;
+        if (options.overlaydef) {
+            ogfOptions.overlaydef = options.overlaydef;
         }
         if (options.mapdata) {
             ogfOptions.mapdata = options.mapdata;

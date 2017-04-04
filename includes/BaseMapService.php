@@ -139,6 +139,7 @@ abstract class BaseMapService {
 		'layer',
 		'layers',
 		'overlays',
+		'overlaydef',
 		'mapdata',
 	);
 

@@ -72,23 +72,277 @@ ogf.map = function( leafletMap, options ){
         overlayMaps[keyO].addTo( self._map );
 	}
 
+	if( options.overlaydef ){
+		console.log( "options.overlaydef <" + options.overlaydef + ">" );  // _DEBUG_
+	}
+
+	var overlayDefinitions = {
+		Territories: [
+			{url: '/data/ogf_territories.json', key:  'ogfId'},
+			{url: '/data/ogf_polygons.json',    target: 'polygon'},
+			{url: '/data/ogf_status.json',      mapBy:  'status'},
+		],
+		'Coastline Errors': [
+		    {url: '/util-data/costaline_errors.js', key: 'ogfId'},
+		],
+	};
+//  overlayDefinitions = ogf.parseOverlayDefinitions( overlayDefinitions );
+
+	self._map.on( 'overlayadd', function(ev){
+//		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
+		if( overlayDefinitions[ev.name] ){
+			var hObjects = {};
+			ogf.loadOverlay( hObjects, 0, overlayDefinitions[ev.name], function(hObjects){
+				ogf.drawLayerObjects( ev.layer, hObjects );
+			} );
+		}
+	} );
+	self._map.on( 'overlayremove', function(ev){
+		var layer = ev.layer;
+		layer.clearLayers();
+	} );
+
+};
 
 /*
-	map.on( 'overlayadd', function(ev){
-//		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
-		if( overlayEvents[ev.name] && overlayEvents[ev.name][0] ){
-			var funcLoad = overlayEvents[ev.name][0];
-			funcLoad( ev.name, ev.layer );
-		}
+ogf.parseOverlayDefinitions = function( str ){
+	var hDef = {};
+	var listAll = str.split( /;/ );
+	_.forEach( listAll, function(x1){
+		var listDef = _.map( x1.split(/:/), _.trim );
+		var name = listDef.shift();
+		_.forEach( listDef, function(x2){
+			var mtc = x2.match(/^(\S+)(\s+\((.*?)\))?/;
+			if( mtc ){
+				x2 = {url: mtc[1]};
+				if( mtc[3] ){
+					
+				}
+			}
+		} );
+		hDef[name] = listDef;
 	} );
-	map.on( 'overlayremove', function(ev){
-		if( overlayEvents[ev.name] && overlayEvents[ev.name][1] ){
-			var funcRemove = overlayEvents[ev.name][1];
-			funcRemove( ev.name, ev.layer );
-		}
-	} );
+	return hDef;
+}:
 */
+
+ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
+	var info = loadInfo[idx];
+	var url  = info.url;
+
+    ogf.runRequest( 'GET', info.url, '', function(data){
+		try{
+            var struct = JSON.parse( data );
+            if( Array.isArray(struct) && info.key ){
+                struct = ogf.mapArray( struct, info.key );
+            }
+			if( idx === 0 ){
+				for( var key in struct ){
+					hObjects[key] = struct[key];
+				}
+			}else{
+				ogf.applyMap( hObjects, struct, info );
+            }
+            if( idx+1 < loadInfo.length ){
+                ogf.loadOverlay( hObjects, idx+1, loadInfo, cb );
+            }else{
+                cb( hObjects );
+            }
+		}catch( err ){
+			console.log( 'ERROR ' + info.url + ' ' + err.toString() );
+		}
+	} );
 };
+
+ogf.mapArray = function( array, key ){
+	var struct = {};
+	for( var i = 0; i < array.length; ++i ){
+	    var item = array[i];
+		struct[item[key]] = item;
+	}
+	return struct;
+};
+
+ogf.applyMap = function( hObjects, hMap, info ){
+	for( var key in hObjects ){
+		var obj = hObjects[key];
+		var mapKey = info.mapBy ? obj[info.mapBy] : key;
+		var mapObj = hMap[mapKey];
+		if( mapObj ){
+			if( info.target ){
+				obj[info.target] = mapObj;
+			}else{
+				for( var key2 in mapObj ){
+					obj[key2] = mapObj[key2];
+				}
+			}
+		}
+	}
+};
+
+ogf.drawLayerObjects = function( layer, hObjects ){
+	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
+    var popupOptions = {maxWidth: 600};
+
+	for( var key in hObjects ){
+		var obj  = hObjects[key];
+		var text = ogf.evalObjectText( obj, obj.text );
+
+		if( obj.polygon ){
+            var coordList = obj.polygon;
+			var options = {
+			    color:       obj.color       || '#111111',
+			    weight:      obj.weight      || 1,
+			    fillOpacity: obj.fillOpacity || .5,
+			    fillColor:   obj.fillColor   || '#999999',
+			};
+
+            if( coordList[0] && Array.isArray(coordList[0][0]) ){
+                for( var i = 0; i < coordList.length; ++i ){
+                    L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
+                }
+            }else{
+                L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+            }
+		}
+	}
+};
+
+ogf.evalObjectText = function( obj, template ){
+	if( Array.isArray(template) ){
+		template = template.join('');
+	}
+	var text = template.replace( /%(\w+)%/g, function(x){
+		x = x.substr(1,x.length-2);
+		return obj[x];
+	} ); 	
+
+	return text;
+}
+
+
+
+/*
+ogf.loadCoastlineErrors = function( layerName, layer ){
+	OGF.runRequest( 'GET', '/util-data/coastline_err.js', '', function(data){
+        data = data.replace(/^var err_nodes = /,'');
+		var err_nodes = JSON.parse( data );
+		console.log( "err_nodes = " + JSON.stringify(err_nodes,null,"  ") );  // _DEBUG_
+
+		for( i = 0; i < err_nodes._nodes.length; ++i ){
+			node = err_nodes._nodes[i];
+			text = node.text;
+//			link = 'Node <a href="' + node.link + '">' + node.id + '</a><br>(lat: ' + node.lat + ', lon: ' + node.lon + ')';
+			var color = node.color || 'blue';
+            L.marker( [node.lat, node.lon], {icon: icons[color]} ).addTo( layer ).bindPopup( text );
+		}
+
+		var num = layer.getLayers().length;
+		console.log( "load --- num <" + num + ">" );  // _DEBUG_
+	} );
+};
+
+
+
+ogf.loadTerritories = function( layerName, layer ){
+	var colors = {	
+        owned:          '#ffcc99',
+        available:      '#66cc22',
+        reserved:       '#dddddd',
+        collaborative:  '#cc99ff',
+        'open to all':  '#0044ff',
+        'marked for withdrawal': '#eeff22',
+	};
+    var hConstraints = {
+        'Cold':            {icon: '25px-Ogf-cold-icon.png',      text: 'This territory has a <b>cold</b> climate.'},
+        'Desert':          {icon: '25px-Ogf-desert-icon.png',    text: 'This territory has a <b>desert</b> climate.'},
+        'Tropical':        {icon: '25px-Ogf-tropical-icon.png',  text: 'This territory has a tropical climate.'},
+        'Mountains-CTR':   {icon: '25px-Mountains-CTR-icon.png', text: 'This territory has mountains along its <b>center</b>.'},
+        'Mountains-E':     {icon: '25px-Mountains-CTR-icon.png', text: 'The <b>eastern</b> border is mountainous.'},
+        'Mountains-N':     {icon: '25px-Mountains-N-icon.png',   text: 'The <b>northern</b> border is mountainous.'},
+        'Mountains-NE':    {icon: '25px-Mountains-NE-icon.png',  text: 'The <b>northeastern</b> border is mountainous.'},
+        'Mountains-NW':    {icon: '25px-Mountains-NW-icon.png',  text: 'The <b>northwestern</b> border is mountainous.'},
+        'Mountains-S':     {icon: '25px-Mountains-S-icon.png',   text: 'The <b>southern</b>rn border is mountainous.'},
+        'Mountains-SE':    {icon: '25px-Mountains-SE-icon.png',  text: 'The <b>southeastern</b> border is mountainous.'},
+        'Mountains-SW':    {icon: '25px-Mountains-SW-icon.png',  text: 'The <b>southwestern</b> border is mountainous.'},
+        'Mountains-W':     {icon: '25px-Mountains-W-icon.png',   text: 'The <b>western</b> border is mountainous.'},
+        'Population-E':    {icon: '25px-Population-E-icon.png',  text: 'Most of the population will be in the <b>east</b>.'},
+        'Population-N':    {icon: '25px-Population-N-icon.png',  text: 'Most of the population will be in the <b>north</b>.'},
+        'Population-NE':   {icon: '25px-Population-NE-icon.png', text: 'Most of the population will be in the <b>northeast</b>.'},
+        'Population-NW':   {icon: '25px-Population-NW-icon.png', text: 'Most of the population will be in the <b>northwest</b>.'},
+        'Population-S':    {icon: '25px-Population-S-icon.png',  text: 'Most of the population will be in the <b>south</b>.'},
+        'Population-SE':   {icon: '25px-Population-SE-icon.png', text: 'Most of the population will be in the <b>southeast</b>.'},
+        'Population-SW':   {icon: '25px-Population-SW-icon.png', text: 'Most of the population will be in the <b>southwest</b>.'},
+        'Population-W':    {icon: '25px-Population-W-icon.png',  text: 'Most of the population will be in the <b>west</b>.'},
+        'Advanced':        {icon: '20px-Achtung.png',            text: 'For advanced users only.'},
+        'PossibleCollaboration':  {icon: '20px-Achtung.png',     text: 'Possibly a future collaborative territory.'},
+    };
+    var popupOptions = {maxWidth: 600};
+
+	OGF.runRequest( 'GET', '/data/ogf_territories.json', '', function(data){
+        var territories = JSON.parse( data );
+		var hTerritories = {};
+        for( var i = 0; i < territories.length; ++i ){
+			var terr = territories[i];
+			hTerritories[terr.ogfId] = terr;
+		}
+
+        OGF.runRequest( 'GET', '/data/ogf_polygons.json', '', function(data2){
+            var hPolygons = JSON.parse( data2 );
+//    		    console.log( "polygons = " + JSON.stringify(polygons,null,"  ") );  // _DEBUG_
+
+            for( var ogfId in hPolygons ){
+            console.log( "ogfId <" + ogfId + ">" );  // _DEBUG_
+//    			var coordList = convertCoordlist( polygons[ogfId] );
+//    			console.log( "coordList = " + JSON.stringify(coordList,null,"  ") );  // _DEBUG_
+//              L.polygon( coordList ).addTo( layer );  // multipart polygons don't seem to work 
+				var text = '';
+				var options = { color: '#111111', weight: 1, fillOpacity: .5, fillColor: '#999999' };
+				var terr = hTerritories[ogfId];
+				if( terr ){
+//				    text = terr.ogfId + ' ' + terr.status + ' ' + terr.owner;
+					text = '<b><a href="http://wiki.opengeofiction.net/wiki/index.php/' + terr.name + '">' + terr.name + '</a></b><hr>'
+                    text += '<a href="http://opengeofiction.net/relation/' + terr.rel + '">' + terr.ogfId + '</a>';
+					if( terr.status === 'owned' || terr.status === 'marked for withdrawal' ){
+						text += ' is active - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
+					}else if( terr.status === 'available' ){
+                        text += ' is available - <a href="http://opengeofiction.net/message/new/admin">request this territory</a>.';
+					}else if( terr.status === 'reserved' ){
+						text += ' is not available';
+					}else if( terr.status === 'collaborative' ){
+						text += ' is collaborative - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
+					}else if( terr.status === 'open to all' ){
+                        text += ' is community - anyone may edit here, no permission needed! Happy mapping!<br>Questions? For collaboration please consult ...';
+					}
+
+					if( terr.constraints && terr.constraints.length > 0 ){
+						text += '<hr>';
+						for( var i = 0; i < terr.constraints.length; ++i ){
+                            var cntr = hConstraints[terr.constraints[i]];
+							if( terr.constraints[i].match(/Advanced|Collaboration/) && i > 0 )  text += '<hr>';
+                            text += '<img src="/data/icons/' + cntr.icon + '"> <i>' + cntr.text + '</i><br>';
+						}
+					}
+
+				    options.fillColor = colors[terr.status];
+				}
+
+                var coordList = hPolygons[ogfId];
+                if( coordList[0] && Array.isArray(coordList[0][0]) ){
+                    for( var i = 0; i < coordList.length; ++i ){
+                        L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
+                    }
+                }else{
+                    L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+                }
+            }
+
+            var num = layer.getLayers().length;
+            console.log( "load --- num <" + num + ">" );  // _DEBUG_
+        });
+	});
+};
+*/
 
 ogf.parseUrlParam = function( str ){
     var hParam = {};
@@ -435,5 +689,4 @@ ogf.scale2zoom = function( scale, lat, pxpt ){
 return ogf;
 
 }
-
 
