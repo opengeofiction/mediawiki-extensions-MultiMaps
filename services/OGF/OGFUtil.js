@@ -2,9 +2,12 @@ function OGFUtil(){
 
 var ogf = {
 	config: {
+		API_URL:        'http://opengeofiction.net/',
+		TILES_URL:      'http://tile.opengeofiction.net/',
+		TILESERVER_URL: 'http://tile.opengeofiction.net/',
+		WIKI_URL:       'http://wiki.opengeofiction.net/',
 		NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
 		ROUTING_URL:    'http://route.opengeofiction.net:5000/',
-		TILESERVER_URL: 'http://tile.opengeofiction.net/'
 	},
 };
 
@@ -12,24 +15,24 @@ var ogf = {
 //--------------------------------------------------------------------------------------------------
 
 ogf.map = function( leafletMap, options ){
-	var self = this;
+	var self = {};
 	self._map = leafletMap;
 
 	var baseMapsAvailable = {
 		Standard: {
-		    tileUrl: ogf.config.TILESERVER_URL +'/osmcarto/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
 		    maxZoom: 19,
 		},
 		TopoMap: {
-		    tileUrl: ogf.config.TILESERVER_URL +'/topomap/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
 		    maxZoom: 17,
 		},
 		Histor: {
-		    tileUrl: ogf.config.TILESERVER_URL +'/tiles-histor/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
 		    maxZoom: 18,
 		},
 		Roantra: {
-		    tileUrl: ogf.config.TILESERVER_URL +'/planet/Roantra/{z}/{x}/{y}.png',
+		    tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
 		    maxZoom: 14,
 		},
 	};
@@ -72,20 +75,24 @@ ogf.map = function( leafletMap, options ){
         overlayMaps[keyO].addTo( self._map );
 	}
 
+	var overlayDefinitions = {};
 	if( options.overlaydef ){
 		console.log( "options.overlaydef <" + options.overlaydef + ">" );  // _DEBUG_
+		overlayDefinitions = JSON.parse( options.overlaydef );
 	}
 
-	var overlayDefinitions = {
-		Territories: [
-			{url: '/data/ogf_territories.json', key:  'ogfId'},
-			{url: '/data/ogf_polygons.json',    target: 'polygon'},
-			{url: '/data/ogf_status.json',      mapBy:  'status'},
-		],
-		'Coastline Errors': [
+	if( ! overlayDefinitions.Territories ){
+		overlayDefinitions.Territories = [
+			{url: '/data/ogf_territories.json', key:    'ogfId'},
+			{url: '/data/ogf_polygons.json',    wrap:   'polygon'},
+			{url: '/data/ogf_template.json',    select: ['status','constraints']},
+		];
+	}
+	if( ! overlayDefinitions['Coastline Errors'] ){
+		overlayDefinitions['Coastline Errors'] = [
 		    {url: '/util-data/costaline_errors.js', key: 'ogfId'},
-		],
-	};
+		];
+	}
 //  overlayDefinitions = ogf.parseOverlayDefinitions( overlayDefinitions );
 
 	self._map.on( 'overlayadd', function(ev){
@@ -102,7 +109,9 @@ ogf.map = function( leafletMap, options ){
 		layer.clearLayers();
 	} );
 
+	return self;
 };
+
 
 /*
 ogf.parseOverlayDefinitions = function( str ){
@@ -131,26 +140,36 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
 	var url  = info.url;
 
     ogf.runRequest( 'GET', info.url, '', function(data){
+		var struct;
 		try{
             var struct = JSON.parse( data );
-            if( Array.isArray(struct) && info.key ){
-                struct = ogf.mapArray( struct, info.key );
-            }
-			if( idx === 0 ){
-				for( var key in struct ){
-					hObjects[key] = struct[key];
-				}
-			}else{
-				ogf.applyMap( hObjects, struct, info );
-            }
-            if( idx+1 < loadInfo.length ){
-                ogf.loadOverlay( hObjects, idx+1, loadInfo, cb );
-            }else{
-                cb( hObjects );
-            }
 		}catch( err ){
 			console.log( 'ERROR ' + info.url + ' ' + err.toString() );
+			return;
 		}
+
+        if( Array.isArray(struct) && info.key ){
+            struct = ogf.mapArray( struct, info.key );
+        }
+        if( info.wrap ){
+            for( var k1 in struct ){
+                var elem = {};
+                elem[info.wrap] = struct[k1];
+                struct[k1] = elem;
+            }
+        }
+        if( idx === 0 ){
+            for( var k2 in struct ){
+                hObjects[k2] = struct[k2];
+            }
+        }else{
+            ogf.applyMap( hObjects, struct, info );
+        }
+        if( idx+1 < loadInfo.length ){
+            ogf.loadOverlay( hObjects, idx+1, loadInfo, cb );
+        }else{
+            cb( hObjects );
+        }
 	} );
 };
 
@@ -164,24 +183,29 @@ ogf.mapArray = function( array, key ){
 };
 
 ogf.applyMap = function( hObjects, hMap, info ){
-	for( var key in hObjects ){
-		var obj = hObjects[key];
-		var mapKey = info.mapBy ? obj[info.mapBy] : key;
-		var mapObj = hMap[mapKey];
-		if( mapObj ){
-			if( info.target ){
-				obj[info.target] = mapObj;
-			}else{
-				for( var key2 in mapObj ){
-					obj[key2] = mapObj[key2];
-				}
-			}
-		}
+	var select = info.select || '';
+	if( ! Array.isArray(select) )  select = [ select ];
+
+	for( var i = 0; i < select.length; ++i ){
+		var sel = select[i];
+        for( var key in hObjects ){
+            var obj = hObjects[key];
+            var mapKey = sel ? obj[sel] : key;
+			if( ! Array.isArray(mapKey) )  mapKey = [ mapKey ];
+			for( var j = 0; j < mapKey.length; ++j ){
+                var mapObj = hMap[mapKey[j]];
+                if( mapObj ){
+                    for( var key2 in mapObj ){
+                        obj[key2] = mapObj[key2];
+                    }
+                }
+            }
+        }
 	}
 };
 
 ogf.drawLayerObjects = function( layer, hObjects ){
-	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
+//	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
     var popupOptions = {maxWidth: 600};
 
 	for( var key in hObjects ){
@@ -205,6 +229,7 @@ ogf.drawLayerObjects = function( layer, hObjects ){
                 L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
             }
 		}
+		delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 	}
 };
 
@@ -214,8 +239,23 @@ ogf.evalObjectText = function( obj, template ){
 	}
 	var text = template.replace( /%(\w+)%/g, function(x){
 		x = x.substr(1,x.length-2);
-		return obj[x];
+        var val = obj[x];
+        if( val ){
+            if( Array.isArray(val) ){
+				var str = '';
+				for( var i = 0; i < val.length; ++i ){
+//					str += obj['text.'+val[i]];
+					str += ogf.evalObjectText( obj, obj['text.'+val[i]] );
+				}
+				val = str;
+            }
+	    }else{
+			val = ogf.config[x];
+	    }
+		return val || '';
 	} ); 	
+	text = text.replace( /(<hr>)+/g, '<hr>' );
+	text = text.replace( /<hr>$/, '' );
 
 	return text;
 }
