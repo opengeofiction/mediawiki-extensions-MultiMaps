@@ -11,6 +11,10 @@ var ogf = {
 	},
 };
 
+var icons = { red: null, yellow: null, green: null, blue: null };		
+for( var color in icons ){
+    icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png'} );
+}
 
 //--------------------------------------------------------------------------------------------------
 
@@ -89,9 +93,7 @@ ogf.map = function( leafletMap, options ){
 //	}
 
 	var onOverlayAdd = function( name, layer ){
-console.log( "----- 1950 ----- " + name );  // _DEBUG_
 		if( overlayDefinitions[name] ){
-console.log( "----- 1951 -----" );  // _DEBUG_
 			var hObjects = {};
 			ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
 				ogf.drawLayerObjects( layer, hObjects );
@@ -211,33 +213,50 @@ ogf.applyMap = function( hObjects, hMap, info ){
 	}
 };
 
-ogf.drawLayerObjects = function( layer, hObjects ){
+ogf.drawLayerObjects = function( layer, objects ){
+//	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
+	if( Array.isArray(objects) ){
+		for( var i = 0; i < objects.length; ++i ){
+		    ogf.drawLayerObject( layer, objects[i] );
+		}
+	}else{
+        for( var key in objects ){
+		    ogf.drawLayerObject( layer, objects[key] );
+		}
+	}
+};
+
+ogf.drawLayerObject = function( layer, obj ){
 //	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
     var popupOptions = {maxWidth: 600};
+    var text = ogf.evalObjectText( obj, obj.text );
 
-	for( var key in hObjects ){
-		var obj  = hObjects[key];
-		var text = ogf.evalObjectText( obj, obj.text );
+    if( obj.polygon ){
+        var coordList = obj.polygon;
+        var options = {
+            color:       obj.color       || '#111111',
+            weight:      obj.weight      || 1,
+            fillOpacity: obj.fillOpacity || .5,
+            fillColor:   obj.fillColor   || '#999999',
+        };
 
-		if( obj.polygon ){
-            var coordList = obj.polygon;
-			var options = {
-			    color:       obj.color       || '#111111',
-			    weight:      obj.weight      || 1,
-			    fillOpacity: obj.fillOpacity || .5,
-			    fillColor:   obj.fillColor   || '#999999',
-			};
-
-            if( coordList[0] && Array.isArray(coordList[0][0]) ){
-                for( var i = 0; i < coordList.length; ++i ){
-                    L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
-                }
-            }else{
-                L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+        if( coordList[0] && Array.isArray(coordList[0][0]) ){
+            for( var i = 0; i < coordList.length; ++i ){
+                L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
             }
+        }else{
+            L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+        }
+    }else if( 'lat' in obj && 'lon' in obj ){
+		var options = {};
+		if( obj.icon ){
+			options.icon = icon;
+		}else if( obj.color && icons[obj.color] ){
+			options.icon = icons[obj.color];
 		}
-//		delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
-	}
+        L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
+    }
+//	delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
 
 ogf.evalObjectText = function( obj, template ){
