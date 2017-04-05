@@ -147,7 +147,7 @@ ogf.map = function( leafletMap, options ){
 
     for( keyO in hOverlaysActive ){
         overlayMaps[keyO].addTo( self._map );
-        onOverlayAdd( keyO, overlayMaps[keyO] );
+//      onOverlayAdd( keyO, overlayMaps[keyO] );
     }
 
     return self;
