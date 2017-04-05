@@ -68,17 +68,11 @@ ogf.map = function( leafletMap, options ){
 		overlayMaps[keyO] = L.layerGroup();
 	}
 
-	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
-    baseMaps[baseMapActive].addTo( self._map );
-
-	for( keyO in hOverlaysActive ){
-        overlayMaps[keyO].addTo( self._map );
-	}
-
 	var overlayDefinitions = {};
 	if( options.overlaydef ){
 		console.log( "options.overlaydef <" + options.overlaydef + ">" );  // _DEBUG_
-		overlayDefinitions = JSON.parse( options.overlaydef );
+		overlayDefinitions = (typeof options.overlaydef === 'string')? JSON.parse(options.overlaydef) : options.overlaydef;
+		console.log( "overlayDefinitions = " + JSON.stringify(overlayDefinitions,null,"  ") );  // _DEBUG_
 	}
 
 //	if( ! overlayDefinitions.Territories ){
@@ -94,19 +88,33 @@ ogf.map = function( leafletMap, options ){
 //		];
 //	}
 
-	self._map.on( 'overlayadd', function(ev){
-//		for( var key in ev ){ console.log( key + ': ' + ev[key] ); }
-		if( overlayDefinitions[ev.name] ){
+	var onOverlayAdd = function( name, layer ){
+console.log( "----- 1950 ----- " + name );  // _DEBUG_
+		if( overlayDefinitions[name] ){
+console.log( "----- 1951 -----" );  // _DEBUG_
 			var hObjects = {};
-			ogf.loadOverlay( hObjects, 0, overlayDefinitions[ev.name], function(hObjects){
-				ogf.drawLayerObjects( ev.layer, hObjects );
+			ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
+				ogf.drawLayerObjects( layer, hObjects );
 			} );
 		}
+	};
+
+	self._map.on( 'overlayadd', function(ev){
+		onOverlayAdd( ev.name, ev.layer );
 	} );
 	self._map.on( 'overlayremove', function(ev){
 		var layer = ev.layer;
 		layer.clearLayers();
 	} );
+
+
+	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
+    baseMaps[baseMapActive].addTo( self._map );
+
+	for( keyO in hOverlaysActive ){
+        overlayMaps[keyO].addTo( self._map );
+        onOverlayAdd( keyO, overlayMaps[keyO] );
+	}
 
 	return self;
 };
