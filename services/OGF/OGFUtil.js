@@ -1,83 +1,106 @@
 function OGFUtil(){
 
 var ogf = {
-	config: {
-		API_URL:        'http://opengeofiction.net/',
-		TILES_URL:      'http://tile.opengeofiction.net/',
-		TILESERVER_URL: 'http://tile.opengeofiction.net/',
-		WIKI_URL:       'http://wiki.opengeofiction.net/',
-		NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
-		ROUTING_URL:    'http://route.opengeofiction.net:5000/',
-	},
+    config: {
+        API_URL:        'http://opengeofiction.net/',
+        TILES_URL:      'http://tile.opengeofiction.net/',
+        TILESERVER_URL: 'http://tile.opengeofiction.net/',
+        WIKI_URL:       'http://wiki.opengeofiction.net/',
+        NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
+        ROUTING_URL:    'http://route.opengeofiction.net:5000/',
+    },
 };
 
 var icons = { red: null, yellow: null, green: null, blue: null };		
 for( var color in icons ){
-    icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png'} );
+    icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png', iconAnchor: [12,41]} );
+}
+
+L.Control.InfoBox = L.Control.extend( {
+    options: {
+        position: 'bottomleft'
+    },
+//  initialize: function( options ){
+//      // constructor
+//  },
+    onAdd: function( map ){
+        var div = L.DomUtil.create( 'div', 'infobox-container' );
+        div.style.backgroundColor = '#FFFFFF';
+        div.style.padding = '5px 10px 5px 10px';
+        div.innerHTML = this.options.text;
+        return div;
+    },
+    onRemove: function( map ){
+        // when removed
+    }
+} );
+
+L.control.infoBox = function( id, options ){
+    return new L.Control.InfoBox( id, options );
 }
 
 //--------------------------------------------------------------------------------------------------
 
 ogf.map = function( leafletMap, options ){
-	var self = {};
-	self._map = leafletMap;
+    var self = {};
+    self._map = leafletMap;
 
-	var baseMapsAvailable = {
-		Standard: {
-		    tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
-		    maxZoom: 19,
-		},
-		TopoMap: {
-		    tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
-		    maxZoom: 17,
-		},
-		Histor: {
-		    tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
-		    maxZoom: 18,
-		},
-		Roantra: {
-		    tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
-		    maxZoom: 14,
-		},
-	};
-	var overlaysAvailable = {
-		'Coastline Errors': './CoastlineErrors.js',
-		'Territories':      './Territories.js',
-	};
-	var baseMapsEnabled = options.layers   || [ 'Standard', 'TopoMap', 'Histor' ];
-	var overlaysEnabled = options.overlays || [];
+    var baseMapsAvailable = {
+        Standard: {
+            tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
+            maxZoom: 19,
+        },
+        TopoMap: {
+            tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
+            maxZoom: 17,
+        },
+        Histor: {
+            tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
+            maxZoom: 18,
+        },
+        Roantra: {
+            tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
+            maxZoom: 14,
+        },
+    };
+    var overlaysAvailable = {
+        'Coastline Errors': './CoastlineErrors.js',
+        'Territories':      './Territories.js',
+    };
+    var baseMapsEnabled = options.layers   || [ 'Standard', 'TopoMap', 'Histor' ];
+    var overlaysEnabled = options.overlays || [];
 
-	if( ! Array.isArray(baseMapsEnabled) )  baseMapsEnabled = baseMapsEnabled.split(/,/);
-	if( ! Array.isArray(overlaysEnabled) )  overlaysEnabled = overlaysEnabled.split(/,/);
+    if( ! Array.isArray(baseMapsEnabled) )  baseMapsEnabled = baseMapsEnabled.split(/,/);
+    if( ! Array.isArray(overlaysEnabled) )  overlaysEnabled = overlaysEnabled.split(/,/);
 
-	var baseMapActive = options.layer || baseMapsEnabled[0];
-	var baseMaps = {}, overlayMaps = (overlaysEnabled.length > 0)? {} : null, hOverlaysActive = {}, i, keyB, keyO;
+    var baseMapActive = options.layer || baseMapsEnabled[0];
+    var baseMaps = {}, overlayMaps = (overlaysEnabled.length > 0)? {} : null, hOverlaysActive = {}, i, keyB, keyO;
 
-	for( i = 0; i < baseMapsEnabled.length; ++i ){
-		keyB = baseMapsEnabled[i];
-		if( keyB.match(/^\+/) ){
+    for( i = 0; i < baseMapsEnabled.length; ++i ){
+        keyB = baseMapsEnabled[i];
+        if( keyB.match(/^\+/) ){
             keyB = keyB.replace(/^\+/,'');
-			baseMapActive = keyB;
+            baseMapActive = keyB;
         }
         var layerOpt = baseMapsAvailable[keyB];
-		baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
-	}
+        baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
+    }
 
-	for( i = 0; i < overlaysEnabled.length; ++i ){
-		keyO = overlaysEnabled[i];
-		if( keyO.match(/^\+/) ){
+    for( i = 0; i < overlaysEnabled.length; ++i ){
+        keyO = overlaysEnabled[i];
+        if( keyO.match(/^\+/) ){
             keyO = keyO.replace(/^\+/,'');
-			hOverlaysActive[keyO] = true;
+            hOverlaysActive[keyO] = true;
         }
-		overlayMaps[keyO] = L.layerGroup();
-	}
+        overlayMaps[keyO] = L.layerGroup();
+    }
 
-	var overlayDefinitions = {};
-	if( options.overlaydef ){
-		console.log( "options.overlaydef <" + options.overlaydef + ">" );  // _DEBUG_
-		overlayDefinitions = (typeof options.overlaydef === 'string')? JSON.parse(options.overlaydef) : options.overlaydef;
-		console.log( "overlayDefinitions = " + JSON.stringify(overlayDefinitions,null,"  ") );  // _DEBUG_
-	}
+    var overlayDefinitions = {};
+    if( options.overlaydef ){
+        console.log( "options.overlaydef <" + options.overlaydef + ">" );  // _DEBUG_
+        overlayDefinitions = (typeof options.overlaydef === 'string')? JSON.parse(options.overlaydef) : options.overlaydef;
+        console.log( "overlayDefinitions = " + JSON.stringify(overlayDefinitions,null,"  ") );  // _DEBUG_
+    }
 
 //	if( ! overlayDefinitions.Territories ){
 //		overlayDefinitions.Territories = [
@@ -92,70 +115,79 @@ ogf.map = function( leafletMap, options ){
 //		];
 //	}
 
-	var onOverlayAdd = function( name, layer ){
-		if( overlayDefinitions[name] ){
-			var hObjects = {};
-			ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
-				ogf.drawLayerObjects( layer, hObjects );
-			} );
-		}
-	};
+//	L.control.infoBox( {text: 'InfoBox ' + (new Date()).toISOString()} ).addTo( map );
+//	L.control.infoBox( {text: 'TEST 02'} ).addTo( map );
 
-	self._map.on( 'overlayadd', function(ev){
-		onOverlayAdd( ev.name, ev.layer );
-	} );
-	self._map.on( 'overlayremove', function(ev){
-		var layer = ev.layer;
-		layer.clearLayers();
-	} );
+    var hControls = {};
+    var onOverlayAdd = function( name, layer ){
+        if( overlayDefinitions[name] ){
+            var hObjects = {};
+            ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
+                hControls[name] = ogf.drawLayerObjects( hObjects, layer, self._map );
+            } );
+        }
+    };
+
+    self._map.on( 'overlayadd', function(ev){
+        onOverlayAdd( ev.name, ev.layer );
+    } );
+    self._map.on( 'overlayremove', function(ev){
+        var name = ev.name, layer = ev.layer;
+        layer.clearLayers();
+        if( hControls[name] ){
+            for( var i = 0; i < hControls[name].length; ++i ){
+                hControls[name][i].remove();
+            }
+        }
+    } );
 
 
-	L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
+    L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
     baseMaps[baseMapActive].addTo( self._map );
 
-	for( keyO in hOverlaysActive ){
+    for( keyO in hOverlaysActive ){
         overlayMaps[keyO].addTo( self._map );
         onOverlayAdd( keyO, overlayMaps[keyO] );
-	}
+    }
 
-	return self;
+    return self;
 };
 
 
 /*
 ogf.parseOverlayDefinitions = function( str ){
-	var hDef = {};
-	var listAll = str.split( /;/ );
-	_.forEach( listAll, function(x1){
-		var listDef = _.map( x1.split(/:/), _.trim );
-		var name = listDef.shift();
-		_.forEach( listDef, function(x2){
-			var mtc = x2.match(/^(\S+)(\s+\((.*?)\))?/;
-			if( mtc ){
-				x2 = {url: mtc[1]};
-				if( mtc[3] ){
-					
-				}
-			}
-		} );
-		hDef[name] = listDef;
-	} );
-	return hDef;
+    var hDef = {};
+    var listAll = str.split( /;/ );
+    _.forEach( listAll, function(x1){
+        var listDef = _.map( x1.split(/:/), _.trim );
+        var name = listDef.shift();
+        _.forEach( listDef, function(x2){
+            var mtc = x2.match(/^(\S+)(\s+\((.*?)\))?/;
+            if( mtc ){
+                x2 = {url: mtc[1]};
+                if( mtc[3] ){
+                	
+                }
+            }
+        } );
+        hDef[name] = listDef;
+    } );
+    return hDef;
 }:
 */
 
 ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
-	var info = loadInfo[idx];
-	var url  = info.url;
+    var info = loadInfo[idx];
+    var url  = info.url;
 
     ogf.runRequest( 'GET', info.url, '', function(data){
-		var struct;
-		try{
+        var struct;
+        try{
             var struct = JSON.parse( data );
-		}catch( err ){
-			console.log( 'ERROR ' + info.url + ' ' + err.toString() );
-			return;
-		}
+        }catch( err ){
+            console.log( 'ERROR ' + info.url + ' ' + err.toString() );
+            return;
+        }
 
         if( Array.isArray(struct) && info.key ){
             struct = ogf.mapArray( struct, info.key );
@@ -179,29 +211,29 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
         }else{
             cb( hObjects );
         }
-	} );
+    } );
 };
 
 ogf.mapArray = function( array, key ){
-	var struct = {};
-	for( var i = 0; i < array.length; ++i ){
-	    var item = array[i];
-		struct[item[key]] = item;
-	}
-	return struct;
+    var struct = {};
+    for( var i = 0; i < array.length; ++i ){
+        var item = array[i];
+        struct[item[key]] = item;
+    }
+    return struct;
 };
 
 ogf.applyMap = function( hObjects, hMap, info ){
-	var select = info.select || '';
-	if( ! Array.isArray(select) )  select = [ select ];
+    var select = info.select || '';
+    if( ! Array.isArray(select) )  select = [ select ];
 
-	for( var i = 0; i < select.length; ++i ){
-		var sel = select[i];
+    for( var i = 0; i < select.length; ++i ){
+        var sel = select[i];
         for( var key in hObjects ){
             var obj = hObjects[key];
             var mapKey = sel ? obj[sel] : key;
-			if( ! Array.isArray(mapKey) )  mapKey = [ mapKey ];
-			for( var j = 0; j < mapKey.length; ++j ){
+            if( ! Array.isArray(mapKey) )  mapKey = [ mapKey ];
+            for( var j = 0; j < mapKey.length; ++j ){
                 var mapObj = hMap[mapKey[j]];
                 if( mapObj ){
                     for( var key2 in mapObj ){
@@ -210,23 +242,25 @@ ogf.applyMap = function( hObjects, hMap, info ){
                 }
             }
         }
-	}
+    }
 };
 
-ogf.drawLayerObjects = function( layer, objects ){
+ogf.drawLayerObjects = function( objects, layer, map ){
 //	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
-	if( Array.isArray(objects) ){
-		for( var i = 0; i < objects.length; ++i ){
-		    ogf.drawLayerObject( layer, objects[i] );
-		}
-	}else{
+    var controls = [];
+    if( Array.isArray(objects) ){
+        for( var i = 0; i < objects.length; ++i ){
+            ogf.drawLayerObject( objects[i], layer, map, controls );
+        }
+    }else{
         for( var key in objects ){
-		    ogf.drawLayerObject( layer, objects[key] );
-		}
-	}
+            ogf.drawLayerObject( objects[key], layer, map, controls );
+        }
+    }
+    return controls;
 };
 
-ogf.drawLayerObject = function( layer, obj ){
+ogf.drawLayerObject = function( obj, layer, map, controls ){
 //	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
     var popupOptions = {maxWidth: 600};
     var text = ogf.evalObjectText( obj, obj.text );
@@ -248,77 +282,81 @@ ogf.drawLayerObject = function( layer, obj ){
             L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
         }
     }else if( 'lat' in obj && 'lon' in obj ){
-		var options = {};
-		if( obj.icon ){
-			options.icon = icon;
-		}else if( obj.color && icons[obj.color] ){
-			options.icon = icons[obj.color];
-		}
+        var options = {};
+        if( obj.icon ){
+            options.icon = icon;
+        }else if( obj.color && icons[obj.color] ){
+            options.icon = icons[obj.color];
+        }
         L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
+    }else if( obj.control && obj.control === 'InfoBox' ){
+        var infoBox = L.control.infoBox( {text: text} )
+        infoBox.addTo( map );
+        controls.push( infoBox );
     }
 //	delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
 
 ogf.evalObjectText = function( obj, template ){
-	if( Array.isArray(template) ){
-		template = template.join('');
-	}
-	var text = template.replace( /%(\w+)%/g, function(x){
-		x = x.substr(1,x.length-2);
+    if( Array.isArray(template) ){
+        template = template.join('');
+    }
+    var text = template.replace( /%(\w+)%/g, function(x){
+        x = x.substr(1,x.length-2);
         var val = obj[x];
         if( val ){
             if( Array.isArray(val) ){
-				var str = '';
-				for( var i = 0; i < val.length; ++i ){
+                var str = '';
+                for( var i = 0; i < val.length; ++i ){
 //					str += obj['text.'+val[i]];
-					str += ogf.evalObjectText( obj, obj['text.'+val[i]] );
-				}
-				val = str;
+                    str += ogf.evalObjectText( obj, obj['text.'+val[i]] );
+                }
+                val = str;
             }
-	    }else{
-			val = ogf.config[x];
-	    }
-		return val || '';
-	} ); 	
-	text = text.replace( /(<hr>)+/g, '<hr>' );
-	text = text.replace( /<hr>$/, '' );
+        }else{
+            val = ogf.config[x];
+        }
+        return val || '';
+    } ); 	
+    text = text.replace( /(<hr>)+/g, '<hr>' );
+    text = text.replace( /<hr>$/, '' );
 
-	return text;
+    return text;
 }
 
 
 
 /*
 ogf.loadCoastlineErrors = function( layerName, layer ){
-	OGF.runRequest( 'GET', '/util-data/coastline_err.js', '', function(data){
+    OGF.runRequest( 'GET', '/util-data/coastline_err.js', '', function(data){
         data = data.replace(/^var err_nodes = /,'');
-		var err_nodes = JSON.parse( data );
-		console.log( "err_nodes = " + JSON.stringify(err_nodes,null,"  ") );  // _DEBUG_
+        var err_nodes = JSON.parse( data );
+        console.log( "err_nodes = " + JSON.stringify(err_nodes,null,"  ") );  // _DEBUG_
 
-		for( i = 0; i < err_nodes._nodes.length; ++i ){
-			node = err_nodes._nodes[i];
-			text = node.text;
+        for( i = 0; i < err_nodes._nodes.length; ++i ){
+            node = err_nodes._nodes[i];
+            text = node.text;
 //			link = 'Node <a href="' + node.link + '">' + node.id + '</a><br>(lat: ' + node.lat + ', lon: ' + node.lon + ')';
-			var color = node.color || 'blue';
+            var color = node.color || 'blue';
             L.marker( [node.lat, node.lon], {icon: icons[color]} ).addTo( layer ).bindPopup( text );
-		}
+        }
 
-		var num = layer.getLayers().length;
-		console.log( "load --- num <" + num + ">" );  // _DEBUG_
-	} );
+        var num = layer.getLayers().length;
+        console.log( "load --- num <" + num + ">" );  // _DEBUG_
+    } );
 };
 
 
 
 ogf.loadTerritories = function( layerName, layer ){
-	var colors = {	
+    var colors = {	
         owned:          '#ffcc99',
         available:      '#66cc22',
         reserved:       '#dddddd',
         collaborative:  '#cc99ff',
         'open to all':  '#0044ff',
         'marked for withdrawal': '#eeff22',
-	};
+    };
     var hConstraints = {
         'Cold':            {icon: '25px-Ogf-cold-icon.png',      text: 'This territory has a <b>cold</b> climate.'},
         'Desert':          {icon: '25px-Ogf-desert-icon.png',    text: 'This territory has a <b>desert</b> climate.'},
@@ -345,13 +383,13 @@ ogf.loadTerritories = function( layerName, layer ){
     };
     var popupOptions = {maxWidth: 600};
 
-	OGF.runRequest( 'GET', '/data/ogf_territories.json', '', function(data){
+    OGF.runRequest( 'GET', '/data/ogf_territories.json', '', function(data){
         var territories = JSON.parse( data );
-		var hTerritories = {};
+        var hTerritories = {};
         for( var i = 0; i < territories.length; ++i ){
-			var terr = territories[i];
-			hTerritories[terr.ogfId] = terr;
-		}
+            var terr = territories[i];
+            hTerritories[terr.ogfId] = terr;
+        }
 
         OGF.runRequest( 'GET', '/data/ogf_polygons.json', '', function(data2){
             var hPolygons = JSON.parse( data2 );
@@ -362,36 +400,36 @@ ogf.loadTerritories = function( layerName, layer ){
 //    			var coordList = convertCoordlist( polygons[ogfId] );
 //    			console.log( "coordList = " + JSON.stringify(coordList,null,"  ") );  // _DEBUG_
 //              L.polygon( coordList ).addTo( layer );  // multipart polygons don't seem to work 
-				var text = '';
-				var options = { color: '#111111', weight: 1, fillOpacity: .5, fillColor: '#999999' };
-				var terr = hTerritories[ogfId];
-				if( terr ){
+                var text = '';
+                var options = { color: '#111111', weight: 1, fillOpacity: .5, fillColor: '#999999' };
+                var terr = hTerritories[ogfId];
+                if( terr ){
 //				    text = terr.ogfId + ' ' + terr.status + ' ' + terr.owner;
-					text = '<b><a href="http://wiki.opengeofiction.net/wiki/index.php/' + terr.name + '">' + terr.name + '</a></b><hr>'
+                    text = '<b><a href="http://wiki.opengeofiction.net/wiki/index.php/' + terr.name + '">' + terr.name + '</a></b><hr>'
                     text += '<a href="http://opengeofiction.net/relation/' + terr.rel + '">' + terr.ogfId + '</a>';
-					if( terr.status === 'owned' || terr.status === 'marked for withdrawal' ){
-						text += ' is active - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
-					}else if( terr.status === 'available' ){
+                    if( terr.status === 'owned' || terr.status === 'marked for withdrawal' ){
+                        text += ' is active - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
+                    }else if( terr.status === 'available' ){
                         text += ' is available - <a href="http://opengeofiction.net/message/new/admin">request this territory</a>.';
-					}else if( terr.status === 'reserved' ){
-						text += ' is not available';
-					}else if( terr.status === 'collaborative' ){
-						text += ' is collaborative - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
-					}else if( terr.status === 'open to all' ){
+                    }else if( terr.status === 'reserved' ){
+                        text += ' is not available';
+                    }else if( terr.status === 'collaborative' ){
+                        text += ' is collaborative - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
+                    }else if( terr.status === 'open to all' ){
                         text += ' is community - anyone may edit here, no permission needed! Happy mapping!<br>Questions? For collaboration please consult ...';
-					}
+                    }
 
-					if( terr.constraints && terr.constraints.length > 0 ){
-						text += '<hr>';
-						for( var i = 0; i < terr.constraints.length; ++i ){
+                    if( terr.constraints && terr.constraints.length > 0 ){
+                        text += '<hr>';
+                        for( var i = 0; i < terr.constraints.length; ++i ){
                             var cntr = hConstraints[terr.constraints[i]];
-							if( terr.constraints[i].match(/Advanced|Collaboration/) && i > 0 )  text += '<hr>';
+                            if( terr.constraints[i].match(/Advanced|Collaboration/) && i > 0 )  text += '<hr>';
                             text += '<img src="/data/icons/' + cntr.icon + '"> <i>' + cntr.text + '</i><br>';
-						}
-					}
+                        }
+                    }
 
-				    options.fillColor = colors[terr.status];
-				}
+                    options.fillColor = colors[terr.status];
+                }
 
                 var coordList = hPolygons[ogfId];
                 if( coordList[0] && Array.isArray(coordList[0][0]) ){
@@ -406,7 +444,7 @@ ogf.loadTerritories = function( layerName, layer ){
             var num = layer.getLayers().length;
             console.log( "load --- num <" + num + ">" );  // _DEBUG_
         });
-	});
+    });
 };
 */
 
@@ -422,12 +460,12 @@ ogf.parseUrlParam = function( str ){
 };
 
 ogf.setUrlLocation = function( map, url, opt ){
-	if( ! url )  url = document.URL;
-	if( ! opt )  opt = {};
+    if( ! url )  url = document.URL;
+    if( ! opt )  opt = {};
     var hParam = ogf.parseUrlParam( url );
     console.log( "hParam = " + JSON.stringify(hParam,null,"  ") );  // _DEBUG_
     if( hParam.map ){
-	    var loc = hParam.map.split('/');
+        var loc = hParam.map.split('/');
         var zoom = parseFloat(loc[0]), lat = parseFloat(loc[1]), lon = parseFloat(loc[2]);
         if( opt.method === 'MapboxGL' ){
             map.setZoom( zoom );
@@ -436,42 +474,42 @@ ogf.setUrlLocation = function( map, url, opt ){
             map.setView( [lat,lon], zoom );
         }
     }
-	if( opt.layers ){
+    if( opt.layers ){
         var layer = hParam.layer || 'Standard';
         opt.layers[layer].addTo( map );
     }
 
-	if( opt.fields ){
-		for( var i = 0; i < opt.fields.length; ++i ){
-		    var field = opt.fields[i];
-			var elem = document.getElementById( field );
-			if( field in hParam )  elem.value = hParam[field]
-		} 
-	}
+    if( opt.fields ){
+        for( var i = 0; i < opt.fields.length; ++i ){
+            var field = opt.fields[i];
+            var elem = document.getElementById( field );
+            if( field in hParam )  elem.value = hParam[field]
+        } 
+    }
 
     map.on( 'moveend', function(){
-		var hOut = {};
+        var hOut = {};
         var zoom   = map.getZoom();
         var center = map.getCenter();
         var query  = 'map=' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
 //		query += '&layer=' + '';
-		if( opt.fields ){
+        if( opt.fields ){
             for( var i = 0; i < opt.fields.length; ++i ){
                 var field = opt.fields[i];
                 var elem = document.getElementById( field );
                 query += '&' + field + '=' + encodeURIComponent(elem.value);
             }
-		}
-		for( var key in hOut ){
-			query += key + '='
-		}
+        }
+        for( var key in hOut ){
+            query += key + '='
+        }
 
         var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
 //      console.log( "newUrl <" + newUrl + ">" );  // _DEBUG_
         window.history.pushState( '', '', newUrl );
     } );
 
-	return hParam;
+    return hParam;
 };
 
 
@@ -507,13 +545,13 @@ ogf.getOverpassData = function( query, cb ){
 };
 
 ogf.typeMap = function( struct ){
-	var hObj = {};
-	_.forEach( ['node','way','relation'], function(type){
-		hObj[type] = _.keyBy( _.filter( struct.elements, function(x){
-			return x.type === type; 
-		} ), 'id' );
-	} );
-	return hObj;
+    var hObj = {};
+    _.forEach( ['node','way','relation'], function(type){
+        hObj[type] = _.keyBy( _.filter( struct.elements, function(x){
+            return x.type === type; 
+        } ), 'id' );
+    } );
+    return hObj;
 }
 
 ogf.getRelationData = function( relId, cb ){
@@ -530,8 +568,8 @@ ogf.getRelationData = function( relId, cb ){
         console.log( "query <" + query + ">" );  // _DEBUG_
     }
     ogf.getOverpassData( query, function(struct){
-		struct = ogf.typeMap( struct );
-		cb( struct );
+        struct = ogf.typeMap( struct );
+        cb( struct );
     } );
 };
 
@@ -660,59 +698,59 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
 
 
 ogf.geoArea = function( ctx, obj, bbox ){
-	var xMin = bbox[0], yMin = bbox[1], xMax = bbox[2], yMax = bbox[3];
-	var lon0 = (xMax + xMin)/2;
+    var xMin = bbox[0], yMin = bbox[1], xMax = bbox[2], yMax = bbox[3];
+    var lon0 = (xMax + xMin)/2;
 //  var pr = proj4('+proj=eck4 +lon_0=' + lon0 + ' +x_0=0 +y_0=0');
 //	var pr = proj4('+proj=sinu +lon_0=' + lon0 +' +x_0=0 +y_0=0');
     var pr = proj4('+proj=cea +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs');
 
-	console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
+    console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
     if( _.isNumber(obj) ){
         obj = ctx.relation[obj];
     }
 
-	if( obj.type === 'way' ){
-		var way = obj;
-		var iMax = way.nodes.length - 1;
+    if( obj.type === 'way' ){
+        var way = obj;
+        var iMax = way.nodes.length - 1;
 //		if( way.nodes[0] != way.nodes[iMax] ){
 //			console.log( 'ERROR geoArea: way is not closed (' + way.id + ')' );
 //			console.log( 'end point: ' + way.nodes[iMax] );
 //			throw 'error at node ' + way.nodes[iMax];
 //		}
-		if( way.nodes[0] != way.nodes[iMax] ){
-			way.nodes.push( way.nodes[0] );
-			++iMax;
-		}
-		var geoArea = 0;
-		for( var i = 0; i < iMax; ++i ){
-			var nodeA = ctx.node[way.nodes[i]], nodeB = ctx.node[way.nodes[i+1]];
-  			console.log( "nodeA = " + JSON.stringify(nodeA,null,"  ") );  // _DEBUG_
-  			console.log( "nodeB = " + JSON.stringify(nodeB,null,"  ") );  // _DEBUG_
-			var ptA = pr.forward( [nodeA.lon,nodeA.lat] );
-			var ptB = pr.forward( [nodeB.lon,nodeB.lat] );
-  			console.log( "ptA = " + JSON.stringify(ptA,null,"  ") );  // _DEBUG_
-  			console.log( "ptB = " + JSON.stringify(ptB,null,"  ") );  // _DEBUG_
-			var ap = (ptA[0] * ptB[1] - ptA[1] * ptB[0]);
-			console.log( "ap <" + ap + ">" );  // _DEBUG_
-			geoArea += ap;
-		    console.log( "geoArea <" + geoArea + ">" );  // _DEBUG_
-		}
-		return Math.abs(geoArea) / 2000000;
-	}else if( obj.type === 'relation' ){
-		var rel = obj;
-		var aRelOuter = ogf.buildWaySequence( ctx, obj, null, {role: 'outer'} );
-		if( aRelOuter.length === 0 ){
-			throw "no member way with role=outer\n";
-		}
-		var aRelInner = ogf.buildWaySequence( ctx, obj, null, {role: 'inner'} );
-		var area = 0;
-		_.forEach( aRelOuter, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
-		_.forEach( aRelInner, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
-		return area;
-	}else{
-		throw 'ERROR geoArea: Unsupported object type: ' + obj.type;
-		return 0;
-	}
+        if( way.nodes[0] != way.nodes[iMax] ){
+            way.nodes.push( way.nodes[0] );
+            ++iMax;
+        }
+        var geoArea = 0;
+        for( var i = 0; i < iMax; ++i ){
+            var nodeA = ctx.node[way.nodes[i]], nodeB = ctx.node[way.nodes[i+1]];
+            console.log( "nodeA = " + JSON.stringify(nodeA,null,"  ") );  // _DEBUG_
+            console.log( "nodeB = " + JSON.stringify(nodeB,null,"  ") );  // _DEBUG_
+            var ptA = pr.forward( [nodeA.lon,nodeA.lat] );
+            var ptB = pr.forward( [nodeB.lon,nodeB.lat] );
+            console.log( "ptA = " + JSON.stringify(ptA,null,"  ") );  // _DEBUG_
+            console.log( "ptB = " + JSON.stringify(ptB,null,"  ") );  // _DEBUG_
+            var ap = (ptA[0] * ptB[1] - ptA[1] * ptB[0]);
+            console.log( "ap <" + ap + ">" );  // _DEBUG_
+            geoArea += ap;
+            console.log( "geoArea <" + geoArea + ">" );  // _DEBUG_
+        }
+        return Math.abs(geoArea) / 2000000;
+    }else if( obj.type === 'relation' ){
+        var rel = obj;
+        var aRelOuter = ogf.buildWaySequence( ctx, obj, null, {role: 'outer'} );
+        if( aRelOuter.length === 0 ){
+            throw "no member way with role=outer\n";
+        }
+        var aRelInner = ogf.buildWaySequence( ctx, obj, null, {role: 'inner'} );
+        var area = 0;
+        _.forEach( aRelOuter, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
+        _.forEach( aRelInner, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
+        return area;
+    }else{
+        throw 'ERROR geoArea: Unsupported object type: ' + obj.type;
+        return 0;
+    }
 }
 
 
@@ -755,4 +793,5 @@ ogf.scale2zoom = function( scale, lat, pxpt ){
 return ogf;
 
 }
+
 
