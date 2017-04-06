@@ -154,28 +154,6 @@ ogf.map = function( leafletMap, options ){
 };
 
 
-/*
-ogf.parseOverlayDefinitions = function( str ){
-    var hDef = {};
-    var listAll = str.split( /;/ );
-    _.forEach( listAll, function(x1){
-        var listDef = _.map( x1.split(/:/), _.trim );
-        var name = listDef.shift();
-        _.forEach( listDef, function(x2){
-            var mtc = x2.match(/^(\S+)(\s+\((.*?)\))?/;
-            if( mtc ){
-                x2 = {url: mtc[1]};
-                if( mtc[3] ){
-                	
-                }
-            }
-        } );
-        hDef[name] = listDef;
-    } );
-    return hDef;
-}:
-*/
-
 ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
     var info = loadInfo[idx];
     var url  = info.url;
@@ -281,12 +259,12 @@ ogf.drawLayerObject = function( obj, layer, map, controls ){
         }else{
             L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
         }
-    }else if( 'lat' in obj && 'lon' in obj ){
+    }else if( obj.icon ){
         var options = {};
-        if( obj.icon ){
-            options.icon = icon;
-        }else if( obj.color && icons[obj.color] ){
-            options.icon = icons[obj.color];
+        if( icons[obj.icon] ){
+            options.icon = icons[obj.icon];
+        }else{
+            options.icon = L.icon( {iconUrl: options.icon, iconAnchor: [12,41]} );
         }
         L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.control && obj.control === 'InfoBox' ){
