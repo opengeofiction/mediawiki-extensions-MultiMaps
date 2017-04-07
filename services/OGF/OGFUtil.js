@@ -322,7 +322,7 @@ ogf.evalObjectText = function( obj, template, key ){
     if( Array.isArray(template) ){
         template = template.join('');
     }
-    var text = template.replace( /%(\w+)%/g, function(x){
+    var text = template.replace( /%([#\w]+)%/g, function(x){
         x = x.substr(1,x.length-2);
         var val = (x === '#')? key : obj[x];
         if( val ){
