@@ -264,7 +264,9 @@ ogf.drawLayerObject = function( obj, layer, map, controls ){
         if( icons[obj.icon] ){
             options.icon = icons[obj.icon];
         }else{
-            options.icon = L.icon( {iconUrl: options.icon, iconAnchor: [12,41]} );
+			var iconUrl = ogf.config.TILES_URL +'data/icons/'+ obj.icon;
+			var anchor  = obj.iconAnchor || [12,41];
+            options.icon = L.icon( {iconUrl: iconUrl, iconAnchor: anchor} );
         }
         L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.control && obj.control === 'InfoBox' ){
@@ -272,10 +274,11 @@ ogf.drawLayerObject = function( obj, layer, map, controls ){
         infoBox.addTo( map );
         controls.push( infoBox );
     }
-//	delete obj.polygon; console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
+	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
 
 ogf.evalObjectText = function( obj, template ){
+    if( ! template )  return "";
     if( Array.isArray(template) ){
         template = template.join('');
     }
