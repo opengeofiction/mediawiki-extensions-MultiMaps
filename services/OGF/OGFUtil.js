@@ -252,21 +252,22 @@ ogf.drawLayerObject = function( obj, layer, map, controls ){
             fillColor:   obj.fillColor   || '#999999',
         };
 
-        if( coordList[0] && Array.isArray(coordList[0][0]) ){
-            for( var i = 0; i < coordList.length; ++i ){
-                L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
-            }
-        }else{
-            L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
-        }
+//      if( coordList[0] && Array.isArray(coordList[0][0]) ){
+//          for( var i = 0; i < coordList.length; ++i ){
+//              L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
+//          }
+//      }else{
+//          L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+//      }
+        L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.icon ){
         var options = {};
         if( icons[obj.icon] ){
             options.icon = icons[obj.icon];
         }else{
-			var iconUrl = ogf.config.TILES_URL +'data/icons/'+ obj.icon;
-			var anchor  = obj.iconAnchor || [12,41];
-            options.icon = L.icon( {iconUrl: iconUrl, iconAnchor: anchor} );
+			var iconOpt = {iconUrl: ogf.config.TILES_URL +'data/icons/'+ obj.icon};
+			if( obj.iconAnchor )  iconOpt.iconAnchor = obj.iconAnchor;
+            options.icon = L.icon( iconOpt );
         }
         L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.control && obj.control === 'InfoBox' ){
