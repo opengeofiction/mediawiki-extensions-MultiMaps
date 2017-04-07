@@ -274,7 +274,7 @@ ogf.drawLayerObject = function( obj, layer, map, controls ){
         infoBox.addTo( map );
         controls.push( infoBox );
     }
-	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
+//	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
 
 ogf.evalObjectText = function( obj, template ){
