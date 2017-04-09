@@ -254,7 +254,7 @@ ogf.applyMap = function( hObjects, hMap, info ){
                 var mapObj = hMap[mapKey[j]];
                 if( mapObj ){
                     for( keyS in mapObj ){
-                        obj[keyS] = mapObj[keyS];
+                        if( ! obj[keyS] )  obj[keyS] = mapObj[keyS];
                     }
                 }
             }
@@ -322,9 +322,8 @@ ogf.evalObjectText = function( obj, template, key ){
     if( Array.isArray(template) ){
         template = template.join('');
     }
-    var text = template.replace( /%([#\w]+)%/g, function(x){
-        x = x.substr(1,x.length-2);
-        var val = (x === '#')? key : obj[x];
+    var text = template.replace( /%([#\w]+)%/g, function(x,x1){
+		var val = (x1 === '#')? key : obj[x1];
         if( val ){
             if( Array.isArray(val) ){
                 var str = '';
@@ -335,7 +334,7 @@ ogf.evalObjectText = function( obj, template, key ){
                 val = str;
             }
         }else{
-            val = ogf.config[x];
+            val = ogf.config[x1];
         }
         return val || '';
     } ); 	
@@ -343,7 +342,9 @@ ogf.evalObjectText = function( obj, template, key ){
     text = text.replace( /<hr>$/, '' );
 
     return text;
-}
+};
+
+
 
 
 
