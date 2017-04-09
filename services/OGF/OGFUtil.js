@@ -16,6 +16,13 @@ for( var color in icons ){
     icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png', iconAnchor: [12,41]} );
 }
 
+var linkText = {
+    ogfCopy:     '&copy; <a href="https://opengeofiction.net">OpenGeofiction</a> contributors',
+    osmCopy:     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+    cc_by_sa:    '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+    cc_by_nc_sa: '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
+};
+
 L.Control.InfoBox = L.Control.extend( {
     options: {
         position: 'bottomleft'
@@ -44,23 +51,41 @@ L.control.infoBox = function( id, options ){
 ogf.map = function( leafletMap, options ){
     var self = {};
     self._map = leafletMap;
+	if( leafletMap.attributionControl )  leafletMap.attributionControl.setPrefix( '' );
 
     var baseMapsAvailable = {
         Standard: {
             tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
             maxZoom: 19,
+            attribution: linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa,
         },
         TopoMap: {
             tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
             maxZoom: 17,
+            attribution: 'map data: ' + linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa +
+                ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + linkText.cc_by_sa,
         },
         Histor: {
             tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
             maxZoom: 18,
+            attribution: 'map data: ' + linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa +
+                ' | map style: &copy; <a href="http://opengeofiction.net/user/histor">histor</a> - <a href="http://wiki.opengeofiction.net/wiki/index.php/OGF:Histor-style">more info</a>',
         },
         Roantra: {
             tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
             maxZoom: 14,
+            attribution: 'Copyright &copy; Thilo Stapff 2014',
+        },
+        OpenStreetMap: {
+            tileUrl: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            maxZoom: 19,
+            attribution: linkText.osmCopy,
+        },
+        OpenTopoMap: {
+            tileUrl: 'http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            maxZoom: 17,
+            attribution: 'map data: ' + linkText.osmCopy + ', <a href="http://viewfinderpanoramas.org/">SRTM</a>' +
+                ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + linkText.cc_by_sa,
         },
     };
     var overlaysAvailable = {
@@ -101,22 +126,6 @@ ogf.map = function( leafletMap, options ){
         overlayDefinitions = (typeof options.overlaydef === 'string')? JSON.parse(options.overlaydef) : options.overlaydef;
 //      console.log( "overlayDefinitions = " + JSON.stringify(overlayDefinitions,null,"  ") );  // _DEBUG_
     }
-
-//	if( ! overlayDefinitions.Territories ){
-//		overlayDefinitions.Territories = [
-//			{url: '/data/ogf_territories.json', key:    'ogfId'},
-//			{url: '/data/ogf_polygons.json',    wrap:   'polygon'},
-//			{url: '/data/ogf_template.json',    select: ['status','constraints']},
-//		];
-//	}
-//	if( ! overlayDefinitions['Coastline Errors'] ){
-//		overlayDefinitions['Coastline Errors'] = [
-//		    {url: '/util-data/costaline_errors.js', key: 'ogfId'},
-//		];
-//	}
-
-//	L.control.infoBox( {text: 'InfoBox ' + (new Date()).toISOString()} ).addTo( map );
-//	L.control.infoBox( {text: 'TEST 02'} ).addTo( map );
 
     var hControls = {};
     var onOverlayAdd = function( name, layer ){
@@ -173,25 +182,6 @@ ogf.getApplyStruct = function( info, cb ){
 
 ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
     var info = loadInfo[idx];
-
-//	var getApplyStruct;
-//	if( info.url ){
-//	    getApplyStruct = function(cb){
-//	        ogf.runRequest( 'GET', info.url, '', function(data){
-//              try{
-//                  var struct = JSON.parse( data );
-//                  cb( struct );
-//              }catch( err ){
-//                  console.log( 'ERROR ' + info.url + ' ' + err.toString() );
-//                  return;
-//              }
-//          } );
-//	    };
-//	}else{
-//	    getApplyStruct = function(cb){
-//	        cb( info.apply );
-//	    };
-//	}
 
     ogf.getApplyStruct( info, function(struct){
         var struct;
@@ -290,14 +280,6 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
             fillOpacity: obj.fillOpacity || .5,
             fillColor:   obj.fillColor   || '#999999',
         };
-
-//      if( coordList[0] && Array.isArray(coordList[0][0]) ){
-//          for( var i = 0; i < coordList.length; ++i ){
-//              L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
-//          }
-//      }else{
-//          L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
-//      }
         L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.icon ){
         var options = {};
@@ -345,130 +327,6 @@ ogf.evalObjectText = function( obj, template, key ){
 };
 
 
-
-
-
-/*
-ogf.loadCoastlineErrors = function( layerName, layer ){
-    OGF.runRequest( 'GET', '/util-data/coastline_err.js', '', function(data){
-        data = data.replace(/^var err_nodes = /,'');
-        var err_nodes = JSON.parse( data );
-        console.log( "err_nodes = " + JSON.stringify(err_nodes,null,"  ") );  // _DEBUG_
-
-        for( i = 0; i < err_nodes._nodes.length; ++i ){
-            node = err_nodes._nodes[i];
-            text = node.text;
-//			link = 'Node <a href="' + node.link + '">' + node.id + '</a><br>(lat: ' + node.lat + ', lon: ' + node.lon + ')';
-            var color = node.color || 'blue';
-            L.marker( [node.lat, node.lon], {icon: icons[color]} ).addTo( layer ).bindPopup( text );
-        }
-
-        var num = layer.getLayers().length;
-        console.log( "load --- num <" + num + ">" );  // _DEBUG_
-    } );
-};
-
-
-
-ogf.loadTerritories = function( layerName, layer ){
-    var colors = {	
-        owned:          '#ffcc99',
-        available:      '#66cc22',
-        reserved:       '#dddddd',
-        collaborative:  '#cc99ff',
-        'open to all':  '#0044ff',
-        'marked for withdrawal': '#eeff22',
-    };
-    var hConstraints = {
-        'Cold':            {icon: '25px-Ogf-cold-icon.png',      text: 'This territory has a <b>cold</b> climate.'},
-        'Desert':          {icon: '25px-Ogf-desert-icon.png',    text: 'This territory has a <b>desert</b> climate.'},
-        'Tropical':        {icon: '25px-Ogf-tropical-icon.png',  text: 'This territory has a tropical climate.'},
-        'Mountains-CTR':   {icon: '25px-Mountains-CTR-icon.png', text: 'This territory has mountains along its <b>center</b>.'},
-        'Mountains-E':     {icon: '25px-Mountains-CTR-icon.png', text: 'The <b>eastern</b> border is mountainous.'},
-        'Mountains-N':     {icon: '25px-Mountains-N-icon.png',   text: 'The <b>northern</b> border is mountainous.'},
-        'Mountains-NE':    {icon: '25px-Mountains-NE-icon.png',  text: 'The <b>northeastern</b> border is mountainous.'},
-        'Mountains-NW':    {icon: '25px-Mountains-NW-icon.png',  text: 'The <b>northwestern</b> border is mountainous.'},
-        'Mountains-S':     {icon: '25px-Mountains-S-icon.png',   text: 'The <b>southern</b>rn border is mountainous.'},
-        'Mountains-SE':    {icon: '25px-Mountains-SE-icon.png',  text: 'The <b>southeastern</b> border is mountainous.'},
-        'Mountains-SW':    {icon: '25px-Mountains-SW-icon.png',  text: 'The <b>southwestern</b> border is mountainous.'},
-        'Mountains-W':     {icon: '25px-Mountains-W-icon.png',   text: 'The <b>western</b> border is mountainous.'},
-        'Population-E':    {icon: '25px-Population-E-icon.png',  text: 'Most of the population will be in the <b>east</b>.'},
-        'Population-N':    {icon: '25px-Population-N-icon.png',  text: 'Most of the population will be in the <b>north</b>.'},
-        'Population-NE':   {icon: '25px-Population-NE-icon.png', text: 'Most of the population will be in the <b>northeast</b>.'},
-        'Population-NW':   {icon: '25px-Population-NW-icon.png', text: 'Most of the population will be in the <b>northwest</b>.'},
-        'Population-S':    {icon: '25px-Population-S-icon.png',  text: 'Most of the population will be in the <b>south</b>.'},
-        'Population-SE':   {icon: '25px-Population-SE-icon.png', text: 'Most of the population will be in the <b>southeast</b>.'},
-        'Population-SW':   {icon: '25px-Population-SW-icon.png', text: 'Most of the population will be in the <b>southwest</b>.'},
-        'Population-W':    {icon: '25px-Population-W-icon.png',  text: 'Most of the population will be in the <b>west</b>.'},
-        'Advanced':        {icon: '20px-Achtung.png',            text: 'For advanced users only.'},
-        'PossibleCollaboration':  {icon: '20px-Achtung.png',     text: 'Possibly a future collaborative territory.'},
-    };
-    var popupOptions = {maxWidth: 600};
-
-    OGF.runRequest( 'GET', '/data/ogf_territories.json', '', function(data){
-        var territories = JSON.parse( data );
-        var hTerritories = {};
-        for( var i = 0; i < territories.length; ++i ){
-            var terr = territories[i];
-            hTerritories[terr.ogfId] = terr;
-        }
-
-        OGF.runRequest( 'GET', '/data/ogf_polygons.json', '', function(data2){
-            var hPolygons = JSON.parse( data2 );
-//    		    console.log( "polygons = " + JSON.stringify(polygons,null,"  ") );  // _DEBUG_
-
-            for( var ogfId in hPolygons ){
-            console.log( "ogfId <" + ogfId + ">" );  // _DEBUG_
-//    			var coordList = convertCoordlist( polygons[ogfId] );
-//    			console.log( "coordList = " + JSON.stringify(coordList,null,"  ") );  // _DEBUG_
-//              L.polygon( coordList ).addTo( layer );  // multipart polygons don't seem to work 
-                var text = '';
-                var options = { color: '#111111', weight: 1, fillOpacity: .5, fillColor: '#999999' };
-                var terr = hTerritories[ogfId];
-                if( terr ){
-//				    text = terr.ogfId + ' ' + terr.status + ' ' + terr.owner;
-                    text = '<b><a href="http://wiki.opengeofiction.net/wiki/index.php/' + terr.name + '">' + terr.name + '</a></b><hr>'
-                    text += '<a href="http://opengeofiction.net/relation/' + terr.rel + '">' + terr.ogfId + '</a>';
-                    if( terr.status === 'owned' || terr.status === 'marked for withdrawal' ){
-                        text += ' is active - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
-                    }else if( terr.status === 'available' ){
-                        text += ' is available - <a href="http://opengeofiction.net/message/new/admin">request this territory</a>.';
-                    }else if( terr.status === 'reserved' ){
-                        text += ' is not available';
-                    }else if( terr.status === 'collaborative' ){
-                        text += ' is collaborative - contact <a href="http://opengeofiction.net/user/' + terr.owner + '">' + terr.owner + '</a>';
-                    }else if( terr.status === 'open to all' ){
-                        text += ' is community - anyone may edit here, no permission needed! Happy mapping!<br>Questions? For collaboration please consult ...';
-                    }
-
-                    if( terr.constraints && terr.constraints.length > 0 ){
-                        text += '<hr>';
-                        for( var i = 0; i < terr.constraints.length; ++i ){
-                            var cntr = hConstraints[terr.constraints[i]];
-                            if( terr.constraints[i].match(/Advanced|Collaboration/) && i > 0 )  text += '<hr>';
-                            text += '<img src="/data/icons/' + cntr.icon + '"> <i>' + cntr.text + '</i><br>';
-                        }
-                    }
-
-                    options.fillColor = colors[terr.status];
-                }
-
-                var coordList = hPolygons[ogfId];
-                if( coordList[0] && Array.isArray(coordList[0][0]) ){
-                    for( var i = 0; i < coordList.length; ++i ){
-                        L.polygon( coordList[i], options ).addTo( layer ).bindPopup( text, popupOptions );
-                    }
-                }else{
-                    L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
-                }
-            }
-
-            var num = layer.getLayers().length;
-            console.log( "load --- num <" + num + ">" );  // _DEBUG_
-        });
-    });
-};
-*/
 
 ogf.parseUrlParam = function( str ){
     var hParam = {};
