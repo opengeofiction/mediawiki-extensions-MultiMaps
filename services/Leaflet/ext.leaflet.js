@@ -131,9 +131,9 @@ mediaWiki.MultiMapsLeaflet = {
 		var map, i, mapOptions = {};
         var initLayer = 'Standard';
 
-		if (options.minzoom !== false) {
-			mapOptions.minZoom = options.minzoom;
-		}
+//		if (options.minzoom !== false) {
+//			mapOptions.minZoom = options.minzoom;
+//		}
 		if (options.maxzoom !== false) {
 			mapOptions.maxZoom = options.maxzoom;
 		}
