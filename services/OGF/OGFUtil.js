@@ -9,12 +9,8 @@ var ogf = {
         NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
         ROUTING_URL:    'http://route.opengeofiction.net:5000/',
     },
+    icons: { red: null, yellow: null, green: null, blue: null },
 };
-
-var icons = { red: null, yellow: null, green: null, blue: null };		
-for( var color in icons ){
-    icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png', iconAnchor: [12,41]} );
-}
 
 var linkText = {
     ogfCopy:     '&copy; <a href="https://opengeofiction.net">OpenGeofiction</a> contributors',
@@ -23,27 +19,33 @@ var linkText = {
     cc_by_nc_sa: '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
 };
 
-L.Control.InfoBox = L.Control.extend( {
-    options: {
-        position: 'bottomleft'
-    },
-//  initialize: function( options ){
-//      // constructor
-//  },
-    onAdd: function( map ){
-        var div = L.DomUtil.create( 'div', 'infobox-container' );
-        div.style.backgroundColor = '#FFFFFF';
-        div.style.padding = '5px 10px 5px 10px';
-        div.innerHTML = this.options.text;
-        return div;
-    },
-    onRemove: function( map ){
-        // when removed
+if( L ){
+    for( var color in ogf.icons ){
+        ogf.icons[color] = L.icon( {iconUrl: ogf.config.TILES_URL + 'util/marker-'+ color +'.png', iconAnchor: [12,41]} );
     }
-} );
 
-L.control.infoBox = function( id, options ){
-    return new L.Control.InfoBox( id, options );
+    L.Control.InfoBox = L.Control.extend( {
+        options: {
+            position: 'bottomleft'
+        },
+    //  initialize: function( options ){
+    //      // constructor
+    //  },
+        onAdd: function( map ){
+            var div = L.DomUtil.create( 'div', 'infobox-container' );
+            div.style.backgroundColor = '#FFFFFF';
+            div.style.padding = '5px 10px 5px 10px';
+            div.innerHTML = this.options.text;
+            return div;
+        },
+        onRemove: function( map ){
+            // when removed
+        }
+    } );
+
+    L.control.infoBox = function( id, options ){
+        return new L.Control.InfoBox( id, options );
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -51,7 +53,7 @@ L.control.infoBox = function( id, options ){
 ogf.map = function( leafletMap, options ){
     var self = {};
     self._map = leafletMap;
-	if( leafletMap.attributionControl )  leafletMap.attributionControl.setPrefix( '' );
+//	if( leafletMap.attributionControl )  leafletMap.attributionControl.setPrefix( '' );
 
     var baseMapsAvailable = {
         Standard: {
@@ -149,7 +151,6 @@ ogf.map = function( leafletMap, options ){
             }
         }
     } );
-
 
     L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
     baseMaps[baseMapActive].addTo( self._map );
@@ -283,8 +284,8 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
         L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.icon ){
         var options = {};
-        if( icons[obj.icon] ){
-            options.icon = icons[obj.icon];
+        if( ogf.icons[obj.icon] ){
+            options.icon = ogf.icons[obj.icon];
         }else{
 			var iconOpt = {iconUrl: ogf.config.TILES_URL +'data/icons/'+ obj.icon};
 			if( obj.iconAnchor )  iconOpt.iconAnchor = obj.iconAnchor;
@@ -342,9 +343,16 @@ ogf.parseUrlParam = function( str ){
 ogf.setUrlLocation = function( map, url, opt ){
     if( ! url )  url = document.URL;
     if( ! opt )  opt = {};
+
+	var map2;
+    if( Array.isArray(map) ){
+        map2 = map[1];
+        map  = map[0];
+    }
+    
     var hParam = ogf.parseUrlParam( url );
-    console.log( "hParam = " + JSON.stringify(hParam,null,"  ") );  // _DEBUG_
-    if( hParam.map ){
+//  console.log( "hParam = " + JSON.stringify(hParam,null,"  ") );  // _DEBUG_
+    if( map && hParam.map ){
         var loc = hParam.map.split('/');
         var zoom = parseFloat(loc[0]), lat = parseFloat(loc[1]), lon = parseFloat(loc[2]);
         if( opt.method === 'MapboxGL' ){
@@ -353,6 +361,11 @@ ogf.setUrlLocation = function( map, url, opt ){
         }else{
             map.setView( [lat,lon], zoom );
         }
+    }
+    if( map2 && hParam.map2 ){
+        var loc2 = hParam.map2.split('/');
+        var lat2 = parseFloat(loc[1]), lon2 = parseFloat(loc[2]);
+        map2.panTo( [lat2,lon2] );
     }
     if( opt.layers ){
         var layer = hParam.layer || 'Standard';
@@ -367,16 +380,24 @@ ogf.setUrlLocation = function( map, url, opt ){
         } 
     }
 
-    map.on( 'moveend', function(){
+    var moveEnd = function(){
         var hOut = {};
         var zoom   = map.getZoom();
         var center = map.getCenter();
         var query  = 'map=' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
+
+        if( map2 ){
+            var center2 = map2.getCenter();
+            query += '&map2=' + 'x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
+        }
+
 //		query += '&layer=' + '';
         if( opt.fields ){
             for( var i = 0; i < opt.fields.length; ++i ){
                 var field = opt.fields[i];
+//              console.log( "field <" + field + ">" );  // _DEBUG_
                 var elem = document.getElementById( field );
+//              console.log( "elem <" + elem + ">" );  // _DEBUG_
                 query += '&' + field + '=' + encodeURIComponent(elem.value);
             }
         }
@@ -387,7 +408,11 @@ ogf.setUrlLocation = function( map, url, opt ){
         var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
 //      console.log( "newUrl <" + newUrl + ">" );  // _DEBUG_
         window.history.pushState( '', '', newUrl );
-    } );
+    };
+    setTimeout( function(){  // workaround for "set map center and zoom first" error
+        map.on( 'moveend', moveEnd );
+        if( map2 )  map2.on( 'moveend', moveEnd );
+    }, 100 );
 
     return hParam;
 };
@@ -414,9 +439,14 @@ ogf.runRequest = function( method, url, data, cb ){
     }
 };
 
-ogf.getOverpassData = function( query, cb ){
+ogf.getOverpassData = function( query, opt, cb ){
+    if( typeof opt === 'function' ){
+        cb = opt;
+        opt = {};
+    }
     var url = 'http://osm3s.opengeofiction.net/api/interpreter';
-    query = "[out:json];\n" + query + "\nout;";
+    query = "[out:json];\n" + query;
+    query += (opt.max)? ("\nout " + opt.max + ";") : "\nout;"
     ogf.runRequest( 'POST', url, query, function(data){
         var struct = JSON.parse( data );
 //		console.log( "struct = " + JSON.stringify(struct,null,"  ") );  // _DEBUG_
@@ -437,16 +467,22 @@ ogf.typeMap = function( struct ){
 ogf.getRelationData = function( relId, cb ){
     var query;
     relId = '' + relId;
+    var wayId;
     if( relId.match(/^\d+$/) ){
         query = '( relation(' + relId + '); >;);';
-    }else{
+    }else if( relId.match(/^[wW]\d+$/) ){
+        wayId = parseInt( relId.substr(1) );
+        query = '( way(' + wayId + '); >;);';
+    }else if( relId.match(/^\d+:/) ){
         var info = relId.split(':');
         var level = info[0];
         var name  = info[1];
         var type  = (info[2] && info[2] === 'L')? 'land_area' : 'boundary';
-        query = '( relation["name"="' + name + '"]["admin_level"="' + level + '"]["' + type +'"="administrative"]; >;);';
-        console.log( "query <" + query + ">" );  // _DEBUG_
+        query = '( relation["name"="' + name + '"]["admin_level"="' + level + '"]["' + type +'"="administrative"]; >; );';
+    }else{
+        cb( null );
     }
+    console.log( "query <" + query + ">" );  // _DEBUG_
     ogf.getOverpassData( query, function(struct){
         struct = ogf.typeMap( struct );
         cb( struct );
@@ -455,22 +491,54 @@ ogf.getRelationData = function( relId, cb ){
 
 
 
+//		if( wayId ){  // create pseudo-relation
+//          struct.relation.relId = {
+//              id:   wayId,
+//              type: 'relation',
+//              tags: struct.way[wayId].tags,
+//              members: [{
+//                  type: 'way',
+//                  ref:  wayId,
+//                  role: 'outer',
+//              }],
+//          };
+//      }
+
+
+
 //--------------------------------------------------------------------------------------------------
 
-ogf.wayGeometry = function( points ){
+ogf.wayPoints = function( way, ctx ){
+	if( ! _.isObject(way) )  way = ctx.way[way];
+	var hNodes = ctx.node;
+    var points = _.map( way.nodes, function(nodeId){
+        var node = hNodes[nodeId];
+        return {lat: node.lat, lng: node.lon};
+    } );
+    return points;
+};
+
+ogf.wayGeometry = function( points, latLonKeys ){
+    var kLon = latLonKeys ? latLonKeys[0] : 'lng';
+    var kLat = latLonKeys ? latLonKeys[1] : 'lat';
     var minLon = 180, maxLon = -180, minLat = 90, maxLat = -90, iMinLat = -1, iMaxLat = -1, iMinLon = -1, iMaxLon = -1;
     _.forEach( points, function(node,i){
-        if( node.longitude < minLon ){  minLon = node.longitude; iMinLon = i; }
-        if( node.longitude > maxLon ){  maxLon = node.longitude; iMaxLon = i; }
-        if( node.latitude < minLat ){  minLat = node.latitude; iMinLat = i; }
-        if( node.latitude > maxLat ){  maxLat = node.latitude; iMaxLat = i; }
+        if( node[kLon] < minLon ){  minLon = node[kLon]; iMinLon = i; }
+        if( node[kLon] > maxLon ){  maxLon = node[kLon]; iMaxLon = i; }
+        if( node[kLat] < minLat ){  minLat = node[kLat]; iMinLat = i; }
+        if( node[kLat] > maxLat ){  maxLat = node[kLat]; iMaxLat = i; }
     } );
-    var iX = (iMinLon > 0 && iMinLon < points.length-1)? iMinLon : iMaxLon;
-    var prod = (points[iX-1].longitude - points[iX].longitude)*(points[iX+1].latitude - points[iX].latitude) - (points[iX-1].latitude - points[iX].latitude)*(points[iX+1].longitude - points[iX].longitude);
+    var lp = points.length - 1;
     var hInfo = {
         bbox: [ minLon, minLat, maxLon, maxLat ],
-        orientation: prod,
     };
+    var iX = (iMinLon > 0 && iMinLon < lp)? iMinLon :
+             (iMaxLon > 0 && iMaxLon < lp)? iMaxLon :
+             (iMinLat > 0 && iMinLat < lp)? iMinLat :
+             (iMaxLat > 0 && iMaxLat < lp)? iMaxLat : -1;
+    if( iX >= 0 ){
+        hInfo.orientation = (points[iX-1][kLon] - points[iX][kLon])*(points[iX+1][kLat] - points[iX][kLat]) - (points[iX-1][kLat] - points[iX][kLat])*(points[iX+1][kLon] - points[iX][kLon]);
+    }
     return hInfo;
 };
 
@@ -509,6 +577,7 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
             ways = _.filter( ways, function(x){ return x; } );
         }
         hWays = _.keyBy( ways, 'id' );
+        console.log( "hWays <" + _.size(hWays) + ">" );  // _DEBUG_
 //      console.log( "hWays = " + JSON.stringify(hWays,null,"  ") );  // _DEBUG_
     }
 
@@ -577,14 +646,18 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
 
 
 
-ogf.geoArea = function( ctx, obj, bbox ){
-    var xMin = bbox[0], yMin = bbox[1], xMax = bbox[2], yMax = bbox[3];
-    var lon0 = (xMax + xMin)/2;
-//  var pr = proj4('+proj=eck4 +lon_0=' + lon0 + ' +x_0=0 +y_0=0');
-//	var pr = proj4('+proj=sinu +lon_0=' + lon0 +' +x_0=0 +y_0=0');
-    var pr = proj4('+proj=cea +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs');
+ogf.geoArea = function( ctx, obj, bbox, pr ){
+    if( ! pr ){
+        var xMin = bbox[0], yMin = bbox[1], xMax = bbox[2], yMax = bbox[3];
+        var lon0 = (xMax + xMin)/2;
+//      pr = proj4('+proj=eck4 +lon_0=' + lon0 + ' +x_0=0 +y_0=0');
+//      pr = proj4('+proj=sinu +lon_0=' + lon0 +' +x_0=0 +y_0=0');
+//      pr = proj4('+proj=cea +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs');
+        pr = proj4('+proj=cea +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84 +units=m +no_defs');
+//      pr = proj4('+proj=aea +lat_1=36 +lat_2=-36 +lat_0=0 +lon_0=' + lon0 + ' +x_0=0 +y_0=0 +datum=WGS84 +ellps=WGS84');
+    }
 
-    console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
+//  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
     if( _.isNumber(obj) ){
         obj = ctx.relation[obj];
     }
@@ -604,16 +677,16 @@ ogf.geoArea = function( ctx, obj, bbox ){
         var geoArea = 0;
         for( var i = 0; i < iMax; ++i ){
             var nodeA = ctx.node[way.nodes[i]], nodeB = ctx.node[way.nodes[i+1]];
-            console.log( "nodeA = " + JSON.stringify(nodeA,null,"  ") );  // _DEBUG_
-            console.log( "nodeB = " + JSON.stringify(nodeB,null,"  ") );  // _DEBUG_
+//          console.log( "nodeA = " + JSON.stringify(nodeA,null,"  ") );  // _DEBUG_
+//          console.log( "nodeB = " + JSON.stringify(nodeB,null,"  ") );  // _DEBUG_
             var ptA = pr.forward( [nodeA.lon,nodeA.lat] );
             var ptB = pr.forward( [nodeB.lon,nodeB.lat] );
-            console.log( "ptA = " + JSON.stringify(ptA,null,"  ") );  // _DEBUG_
-            console.log( "ptB = " + JSON.stringify(ptB,null,"  ") );  // _DEBUG_
+//          console.log( "ptA = " + JSON.stringify(ptA,null,"  ") );  // _DEBUG_
+//          console.log( "ptB = " + JSON.stringify(ptB,null,"  ") );  // _DEBUG_
             var ap = (ptA[0] * ptB[1] - ptA[1] * ptB[0]);
-            console.log( "ap <" + ap + ">" );  // _DEBUG_
+//          console.log( "ap <" + ap + ">" );  // _DEBUG_
             geoArea += ap;
-            console.log( "geoArea <" + geoArea + ">" );  // _DEBUG_
+//          console.log( "geoArea <" + geoArea + ">" );  // _DEBUG_
         }
         return Math.abs(geoArea) / 2000000;
     }else if( obj.type === 'relation' ){
@@ -625,7 +698,7 @@ ogf.geoArea = function( ctx, obj, bbox ){
         var aRelInner = ogf.buildWaySequence( ctx, obj, null, {role: 'inner'} );
         var area = 0;
         _.forEach( aRelOuter, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
-        _.forEach( aRelInner, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
+        _.forEach( aRelInner, function(x){ area -= ogf.geoArea(ctx,x,bbox); } );
         return area;
     }else{
         throw 'ERROR geoArea: Unsupported object type: ' + obj.type;
@@ -651,7 +724,7 @@ ogf.zoom2mpp = function( zoom, lat ){
 
 ogf.mpp2zoom = function( mpp, lat ){
     var y = lat * Math.PI / 180;
-    var zoom = Math.log2( (C * Math.cos(y)) / (mpp * 256) );
+    var zoom = Math.log( (C * Math.cos(y)) / (mpp * 256) ) / Math.LN2;
     return zoom;
 }
 
@@ -665,7 +738,7 @@ ogf.zoom2scale = function( zoom, lat, pxpt ){
 ogf.scale2zoom = function( scale, lat, pxpt ){
     var mpp = scale / 1000 * pxpt;
     var y = lat * Math.PI / 180;
-    var zoom = Math.log2( (C * Math.cos(y)) / (mpp * 256) );
+    var zoom = Math.log( (C * Math.cos(y)) / (mpp * 256) ) / Math.LN2;
     return zoom;
 }
 
