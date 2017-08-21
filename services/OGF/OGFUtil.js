@@ -558,12 +558,12 @@ function drawRouteMasterStations( rel, ctx, hInfo ){
 }
 
 function drawRoute( rel, ctx, hInfo ){
-    var closedWays = OGF.buildWaySequence( ctx, rel.id, null, {role: '^.*$', copy: true} );
+    var closedWays = ogf.buildWaySequence( ctx, rel.id, null, {role: '^.*$', copy: true} );
     closedWays.forEach( function(way){
 //      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
-        var line = OGF.wayPoints( way, ctx );
+        var line = ogf.wayPoints( way, ctx );
 
-//      var popupText = 'Way <a href="' + OGF.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
+//      var popupText = 'Way <a href="' + ogf.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
         var popupText = objText(rel);
 		var color = hInfo.color || hRoutes[rel.id] || '#000000';
         // var color = hInfo.color || hRoutes[rel.id];
@@ -588,8 +588,8 @@ function loadRouteData( routeIds, cb ){
     query = '(' + query + '); (._;>>;);';
     console.log( "query <" + query + ">" );  // _DEBUG_
 
-    OGF.getOverpassData( query, function(ctx){
-        ctx = OGF.typeMap( ctx );
+    ogf.getOverpassData( query, function(ctx){
+        ctx = ogf.typeMap( ctx );
 //      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
         cb( ctx );
     } );
@@ -598,7 +598,7 @@ function loadRouteData( routeIds, cb ){
 function objText( obj ){
     var typeText = obj.type.substr(0,1).toUpperCase() + obj.type.substr(1); 
     var objText = '<b>' + obj.tags.name + '</b>';
-    objText += '<br>' + typeText + ' <a href="' + OGF.config.API_URL + obj.type + '/' + obj.id + '">' + obj.id + '</a>';
+    objText += '<br>' + typeText + ' <a href="' + ogf.config.API_URL + obj.type + '/' + obj.id + '">' + obj.id + '</a>';
     return objText;
 }
 
@@ -812,7 +812,7 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
     }
 
     if( hOpt.relOrder )  hOpt.relOrder = relOrder;
-    if( ! repeatFlag )  OGF.buildWaySequence( ctx, rel || null, hWays, hOpt );
+    if( ! repeatFlag )  ogf.buildWaySequence( ctx, rel || null, hWays, hOpt );
 
 //  return hOpt.relOrder ? _.sortBy( _.values(relOrder), function(x){ return x.length; } ) : _.values(hWays);
     return hOpt.relOrder ? Object.values(relOrder).sort( function(a,b){ return a.length - b.length; } ) : Object.values(hWays);
