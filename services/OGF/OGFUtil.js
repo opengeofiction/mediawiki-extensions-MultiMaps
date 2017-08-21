@@ -548,14 +548,14 @@ ogf.boundaryRelation = function( layer, relId ){
 
 
 ogf.publicTransport = function( layer, routeIds ){
-    console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
+//  console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
     var hInfo = {layer: layer};
-	loadRouteData( routeIds, function(ctx){
+    loadRouteData( routeIds, function(ctx){
         routeIds.forEach( function(relId){
             var rel = ctx.relation[relId];
             drawRouteMasterLines( rel, ctx, hInfo );
         } );
-		routeIds.forEach( function(relId){
+        routeIds.forEach( function(relId){
             var rel = ctx.relation[relId];
             drawRouteMasterStations( rel, ctx, hInfo );
         } );
@@ -563,27 +563,27 @@ ogf.publicTransport = function( layer, routeIds ){
 }
 
 function drawRouteMasterLines( rel, ctx, hInfo ){
-	var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
-	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
-	if (routes.length > 0){
+    var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
+    hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+    if (routes.length > 0){
         routes.forEach( function(mR){
             drawRoute( ctx.relation[mR.ref], ctx, hInfo );
         } );
-	} else {
+    } else {
         drawRoute( rel, ctx, hInfo );
-	}
+    }
 }
 
 function drawRouteMasterStations( rel, ctx, hInfo ){
-	var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
-	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
-	if (routes.length > 0){
+    var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
+    hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+    if (routes.length > 0){
         routes.forEach( function(mR){
             drawStations( ctx.relation[mR.ref], ctx, hInfo );
         } );
-	} else {
+    } else {
         drawStations( rel, ctx, hInfo );
-	}
+    }
 }
 
 function drawRoute( rel, ctx, hInfo ){
@@ -591,31 +591,28 @@ function drawRoute( rel, ctx, hInfo ){
     closedWays.forEach( function(way){
 //      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
         var line = ogf.wayPoints( way, ctx );
-
-//      var popupText = 'Way <a href="' + ogf.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
         var popupText = objText(rel);
-		var color = hInfo.color || hRoutes[rel.id] || '#000000';
+        var color = hInfo.color || hRoutes[rel.id] || '#000000';
         // var color = hInfo.color || hRoutes[rel.id];
         L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
     } );
 }
 
 function drawStations( rel, ctx, hInfo) {
-	var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
-	var color = hInfo.color || hRoutes[rel.id] || '#000000';
+    var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
+    var color = hInfo.color || hRoutes[rel.id] || '#000000';
     stations.forEach( function(mS){
         var node = ctx.node[mS.ref];
-		var popupText = objText(node, rel);
+        var popupText = objText(node, rel);
         //var popupText = objTextStation(node, rel);
         L.circleMarker( [node.lat, node.lon], {radius: 5, color: color, weight: 2, fillColor: '#FFFFFF', fillOpacity: 1} ).addTo( hInfo.layer ).bindPopup( popupText );
     } );	
 }
 
 function loadRouteData( routeIds, cb ){
-//  query = 'relation["route"="railway"]["name"~"FFBN Tren Suburbano"]; (._;>;);';
     query = routeIds.map( function(x){ return 'relation('+x+')'; } ).join(';');
     query = '(' + query + '); (._;>>;);';
-    console.log( "query <" + query + ">" );  // _DEBUG_
+//  console.log( "query <" + query + ">" );  // _DEBUG_
 
     ogf.getOverpassData( query, function(ctx){
         ctx = ogf.typeMap( ctx );
@@ -631,77 +628,6 @@ function objText( obj ){
     return objText;
 }
 
-/*
-ogf.publicTransport = function( layer, routeIds ){
-    console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
-	loadRouteData( routeIds, function(ctx){
-        routeIds.forEach( function(relId){
-            var rel = ctx.relation[relId];
-            drawRouteMaster( rel, ctx, {layer: layer} );
-        } );
-    } );
-}
-
-function drawRouteMaster( rel, ctx, hInfo ){
-	var routes   = rel.members.filter( function(x){ return x.type === 'relation'; } );
-	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
-    hInfo.text   = objText(rel);
-	if (routes.length > 0){
-        routes.forEach( function(mR){
-            drawRoute( ctx.relation[mR.ref], ctx, hInfo );
-        } );
-        routes.forEach( function(mR){
-            drawStations( ctx.relation[mR.ref], ctx, hInfo );
-        } );
-	} else {
-        drawRoute( rel, ctx, hInfo );
-        drawStations( rel, ctx, hInfo );
-	}
-}
-
-function drawRoute( rel, ctx, hInfo ){
-    var closedWays = OGF.buildWaySequence( ctx, rel.id, null, {role: '^.*$', copy: true} );
-    closedWays.forEach( function(way){
-//      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
-        var line = OGF.wayPoints( way, ctx );
-//      var popupText = 'Way <a href="' + OGF.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
-        var popupText = hInfo.text || objText(rel);
-		var color = hInfo.color || hRoutes[rel.id] || '#000000';
-        // var color = hInfo.color || hRoutes[rel.id];
-        L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
-    } );
-}
-
-function drawStations( rel, ctx, hInfo) {
-	var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
-	var color = hInfo.color || hRoutes[rel.id] || '#000000';
-    stations.forEach( function(mS){
-        var node = ctx.node[mS.ref];
-        var popupText = objText(node);
-        L.circleMarker( [node.lat, node.lon], {radius: 5, color: color, weight: 2, fillColor: '#FFFFFF', fillOpacity: 1} ).addTo( hInfo.layer ).bindPopup( popupText );
-    } );
-}
-
-function loadRouteData( routeIds, cb ){
-//  query = 'relation["route"="railway"]["name"~"FFBN Tren Suburbano"]; (._;>;);';
-    query = routeIds.map( function(x){ return 'relation('+x+')'; } ).join(';');
-    query = '(' + query + '); (._;>>;);';
-    console.log( "query <" + query + ">" );  // _DEBUG_
-
-    OGF.getOverpassData( query, function(ctx){
-        ctx = OGF.typeMap( ctx );
-//      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
-        cb( ctx );
-    } );
-}
-
-function objText( obj ){
-    var typeText = obj.type.substr(0,1).toUpperCase() + obj.type.substr(1); 
-    var objText = '<b>' + obj.tags.name + '</b>';
-    objText += '<br>' + typeText + ' <a href="' + OGF.config.API_URL + obj.type + '/' + obj.id + '">' + obj.id + '</a>';
-    return objText;
-}
-*/
 
 //--- end publicTransport -----------------------------------------------------------------------------------------------
 
