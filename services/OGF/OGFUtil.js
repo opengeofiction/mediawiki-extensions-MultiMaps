@@ -593,7 +593,7 @@ function drawRoute( rel, ctx, hInfo ){
         var line = ogf.wayPoints( way, ctx );
         var popupText = objText(rel);
         var color = hInfo.color || '#000000';
-        L.polyline( line, {color: color, weight: 5} ).addTo( map ).bindPopup( popupText );
+        L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
     } );
 }
 
