@@ -509,10 +509,39 @@ ogf.getRelationData = function( relId, cb ){
 
 //--------------------------------------------------------------------------------------------------
 
-ogf.boundaryRelation = function(){
+ogf.boundaryRelation = function( layer, relId ){
+    var rlat = 90, rlon = 360;
+    var worldPolygon    = [ [-rlat,-rlon], [-rlat,rlon], [rlat,rlon], [rlat,-rlon] ];
+    var areaPolygon;
 
+    var query = 'relation(' + relId + '); (._;>>;);';
+    console.log( "query <" + query + ">" );  // _DEBUG_
 
+    ogf.getOverpassData( query, function(ctx){
+        ctx = ogf.typeMap( ctx );
+//      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
 
+        var closedWays = ogf.buildWaySequence( ctx, relId, null, {role: 'outer', copy: true} );
+//      console.log( "closedWays = " + JSON.stringify(closedWays,null,"  ") );  // _DEBUG_
+        closedWays = closedWays.map( function(way){
+//          console.log( "way.nodes = " + JSON.stringify(way.nodes,null,"  ") );  // _DEBUG_
+            var polygon = ogf.wayPoints( way, ctx );
+            return polygon;
+        } );
+
+        var innerWays = ogf.buildWaySequence( ctx, relId, null, {role: 'inner', copy: true} );
+        innerWays = innerWays.map( function(way){
+//          console.log( "way.nodes = " + JSON.stringify(way.nodes,null,"  ") );  // _DEBUG_
+            var polygon = ogf.wayPoints( way, ctx );
+            return polygon;
+        } );
+        Array.prototype.push.apply( closedWays, innerWays );
+
+        var areaSize, areaSizeSqm;
+        closedWays.unshift( worldPolygon );
+//      areaPolygon = L.polygon( closedWays, {weight: 1.5} ).addTo( map );
+        areaPolygon = L.polygon( closedWays, {weight: 1, color: '#000000', fillColor: '#000000', fillOpacity: 0.25} ).addTo( layer );
+    } );
 }
 
 //---begin publicTransport ---------------------------------------------------------------------------------------
@@ -720,7 +749,7 @@ ogf.rectUnion = function( rA, rB ){
 ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
     if( ! hOpt )  hOpt = {};
     var repeatFlag = hWays ? true : false;
-    console.log( '--- buildWaySequence --- repeatFlag=' + repeatFlag + ' opt=(' + JSON.stringify(hOpt) +')' );  // _DEBUG_
+//  console.log( '--- buildWaySequence --- repeatFlag=' + repeatFlag + ' opt=(' + JSON.stringify(hOpt) +')' );  // _DEBUG_
 
     if( typeof rel === 'string' )  rel = parseInt( rel );
     if( typeof rel === 'number' ){
