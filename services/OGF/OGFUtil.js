@@ -132,10 +132,15 @@ ogf.map = function( leafletMap, options ){
     var hControls = {};
     var onOverlayAdd = function( name, layer ){
         if( overlayDefinitions[name] ){
-            var hObjects = {};
-            ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
-                hControls[name] = ogf.drawLayerObjects( hObjects, layer, self._map );
-            } );
+            if( overlayDefinitions[name]['function'] ){
+                var func = ogf[overlayDefinitions[name]['function']];
+                func( layer, overlayDefinitions[name].param );
+            }else{
+                var hObjects = {};
+                ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
+                    hControls[name] = ogf.drawLayerObjects( hObjects, layer, self._map );
+                } );
+            }
         }
     };
 
@@ -165,7 +170,7 @@ ogf.map = function( leafletMap, options ){
 
 
 ogf.getApplyStruct = function( info, cb ){
-	console.log( "info = " + JSON.stringify(info,null,"  ") );  // _DEBUG_
+//	console.log( "info = " + JSON.stringify(info,null,"  ") );  // _DEBUG_
 	if( info.url ){
         ogf.runRequest( 'GET', info.url, '', function(data){
             try{
@@ -254,7 +259,7 @@ ogf.applyMap = function( hObjects, hMap, info ){
 };
 
 ogf.drawLayerObjects = function( objects, layer, map ){
-//	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
+//	console.log( "objects = " + JSON.stringify(objects,null,"  ") );  // _DEBUG_
     var controls = [];
     if( Array.isArray(objects) ){
         for( var i = 0; i < objects.length; ++i ){
@@ -456,13 +461,24 @@ ogf.getOverpassData = function( query, opt, cb ){
 
 ogf.typeMap = function( struct ){
     var hObj = {};
-    _.forEach( ['node','way','relation'], function(type){
-        hObj[type] = _.keyBy( _.filter( struct.elements, function(x){
+    ['node','way','relation'].forEach( function(type){
+//      hObj[type] = _.keyBy( _.filter( struct.elements, function(x){
+//          return x.type === type; 
+//      } ), 'id' );
+        hObj[type] = ogf.keyBy( struct.elements.filter( function(x){
             return x.type === type; 
         } ), 'id' );
     } );
     return hObj;
 }
+
+ogf.keyBy = function( array, key ){
+    var hObj = {};
+    array.forEach( function(x){  hObj[x[key]] = x;  } );
+    return hObj;
+}
+
+
 
 ogf.getRelationData = function( relId, cb ){
     var query;
@@ -491,27 +507,179 @@ ogf.getRelationData = function( relId, cb ){
 
 
 
-//		if( wayId ){  // create pseudo-relation
-//          struct.relation.relId = {
-//              id:   wayId,
-//              type: 'relation',
-//              tags: struct.way[wayId].tags,
-//              members: [{
-//                  type: 'way',
-//                  ref:  wayId,
-//                  role: 'outer',
-//              }],
-//          };
-//      }
-
-
-
 //--------------------------------------------------------------------------------------------------
 
+ogf.boundaryRelation = function(){
+
+
+
+}
+
+//---begin publicTransport ---------------------------------------------------------------------------------------
+
+
+ogf.publicTransport = function( layer, routeIds ){
+    console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
+    var hInfo = {layer: layer};
+	loadRouteData( routeIds, function(ctx){
+        routeIds.forEach( function(relId){
+            var rel = ctx.relation[relId];
+            drawRouteMasterLines( rel, ctx, hInfo );
+        } );
+		routeIds.forEach( function(relId){
+            var rel = ctx.relation[relId];
+            drawRouteMasterStations( rel, ctx, hInfo );
+        } );
+    } );
+}
+
+function drawRouteMasterLines( rel, ctx, hInfo ){
+	var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
+	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+	if (routes.length > 0){
+        routes.forEach( function(mR){
+            drawRoute( ctx.relation[mR.ref], ctx, hInfo );
+        } );
+	} else {
+        drawRoute( rel, ctx, hInfo );
+	}
+}
+
+function drawRouteMasterStations( rel, ctx, hInfo ){
+	var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
+	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+	if (routes.length > 0){
+        routes.forEach( function(mR){
+            drawStations( ctx.relation[mR.ref], ctx, hInfo );
+        } );
+	} else {
+        drawStations( rel, ctx, hInfo );
+	}
+}
+
+function drawRoute( rel, ctx, hInfo ){
+    var closedWays = OGF.buildWaySequence( ctx, rel.id, null, {role: '^.*$', copy: true} );
+    closedWays.forEach( function(way){
+//      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
+        var line = OGF.wayPoints( way, ctx );
+
+//      var popupText = 'Way <a href="' + OGF.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
+        var popupText = objText(rel);
+		var color = hInfo.color || hRoutes[rel.id] || '#000000';
+        // var color = hInfo.color || hRoutes[rel.id];
+        L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
+    } );
+}
+
+function drawStations( rel, ctx, hInfo) {
+	var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
+	var color = hInfo.color || hRoutes[rel.id] || '#000000';
+    stations.forEach( function(mS){
+        var node = ctx.node[mS.ref];
+		var popupText = objText(node, rel);
+        //var popupText = objTextStation(node, rel);
+        L.circleMarker( [node.lat, node.lon], {radius: 5, color: color, weight: 2, fillColor: '#FFFFFF', fillOpacity: 1} ).addTo( hInfo.layer ).bindPopup( popupText );
+    } );	
+}
+
+function loadRouteData( routeIds, cb ){
+//  query = 'relation["route"="railway"]["name"~"FFBN Tren Suburbano"]; (._;>;);';
+    query = routeIds.map( function(x){ return 'relation('+x+')'; } ).join(';');
+    query = '(' + query + '); (._;>>;);';
+    console.log( "query <" + query + ">" );  // _DEBUG_
+
+    OGF.getOverpassData( query, function(ctx){
+        ctx = OGF.typeMap( ctx );
+//      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
+        cb( ctx );
+    } );
+}
+
+function objText( obj ){
+    var typeText = obj.type.substr(0,1).toUpperCase() + obj.type.substr(1); 
+    var objText = '<b>' + obj.tags.name + '</b>';
+    objText += '<br>' + typeText + ' <a href="' + OGF.config.API_URL + obj.type + '/' + obj.id + '">' + obj.id + '</a>';
+    return objText;
+}
+
+/*
+ogf.publicTransport = function( layer, routeIds ){
+    console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
+	loadRouteData( routeIds, function(ctx){
+        routeIds.forEach( function(relId){
+            var rel = ctx.relation[relId];
+            drawRouteMaster( rel, ctx, {layer: layer} );
+        } );
+    } );
+}
+
+function drawRouteMaster( rel, ctx, hInfo ){
+	var routes   = rel.members.filter( function(x){ return x.type === 'relation'; } );
+	hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+    hInfo.text   = objText(rel);
+	if (routes.length > 0){
+        routes.forEach( function(mR){
+            drawRoute( ctx.relation[mR.ref], ctx, hInfo );
+        } );
+        routes.forEach( function(mR){
+            drawStations( ctx.relation[mR.ref], ctx, hInfo );
+        } );
+	} else {
+        drawRoute( rel, ctx, hInfo );
+        drawStations( rel, ctx, hInfo );
+	}
+}
+
+function drawRoute( rel, ctx, hInfo ){
+    var closedWays = OGF.buildWaySequence( ctx, rel.id, null, {role: '^.*$', copy: true} );
+    closedWays.forEach( function(way){
+//      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
+        var line = OGF.wayPoints( way, ctx );
+//      var popupText = 'Way <a href="' + OGF.config.API_URL + 'way/' + way.id + '">' + way.id + '</a>';
+        var popupText = hInfo.text || objText(rel);
+		var color = hInfo.color || hRoutes[rel.id] || '#000000';
+        // var color = hInfo.color || hRoutes[rel.id];
+        L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
+    } );
+}
+
+function drawStations( rel, ctx, hInfo) {
+	var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
+	var color = hInfo.color || hRoutes[rel.id] || '#000000';
+    stations.forEach( function(mS){
+        var node = ctx.node[mS.ref];
+        var popupText = objText(node);
+        L.circleMarker( [node.lat, node.lon], {radius: 5, color: color, weight: 2, fillColor: '#FFFFFF', fillOpacity: 1} ).addTo( hInfo.layer ).bindPopup( popupText );
+    } );
+}
+
+function loadRouteData( routeIds, cb ){
+//  query = 'relation["route"="railway"]["name"~"FFBN Tren Suburbano"]; (._;>;);';
+    query = routeIds.map( function(x){ return 'relation('+x+')'; } ).join(';');
+    query = '(' + query + '); (._;>>;);';
+    console.log( "query <" + query + ">" );  // _DEBUG_
+
+    OGF.getOverpassData( query, function(ctx){
+        ctx = OGF.typeMap( ctx );
+//      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
+        cb( ctx );
+    } );
+}
+
+function objText( obj ){
+    var typeText = obj.type.substr(0,1).toUpperCase() + obj.type.substr(1); 
+    var objText = '<b>' + obj.tags.name + '</b>';
+    objText += '<br>' + typeText + ' <a href="' + OGF.config.API_URL + obj.type + '/' + obj.id + '">' + obj.id + '</a>';
+    return objText;
+}
+*/
+
+//--- end publicTransport -----------------------------------------------------------------------------------------------
+
 ogf.wayPoints = function( way, ctx ){
-	if( ! _.isObject(way) )  way = ctx.way[way];
+	if( !(typeof way === 'object') )  way = ctx.way[way];
 	var hNodes = ctx.node;
-    var points = _.map( way.nodes, function(nodeId){
+    var points = way.nodes.map( function(nodeId){
         var node = hNodes[nodeId];
         return {lat: node.lat, lng: node.lon};
     } );
@@ -522,7 +690,7 @@ ogf.wayGeometry = function( points, latLonKeys ){
     var kLon = latLonKeys ? latLonKeys[0] : 'lng';
     var kLat = latLonKeys ? latLonKeys[1] : 'lat';
     var minLon = 180, maxLon = -180, minLat = 90, maxLat = -90, iMinLat = -1, iMaxLat = -1, iMinLon = -1, iMaxLon = -1;
-    _.forEach( points, function(node,i){
+    points.forEach( function(node,i){
         if( node[kLon] < minLon ){  minLon = node[kLon]; iMinLon = i; }
         if( node[kLon] > maxLon ){  maxLon = node[kLon]; iMaxLon = i; }
         if( node[kLat] < minLat ){  minLat = node[kLat]; iMinLat = i; }
@@ -554,8 +722,8 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
     var repeatFlag = hWays ? true : false;
     console.log( '--- buildWaySequence --- repeatFlag=' + repeatFlag + ' opt=(' + JSON.stringify(hOpt) +')' );  // _DEBUG_
 
-    if( _.isString(rel) )  rel = parseInt( rel );
-    if( _.isNumber(rel) ){
+    if( typeof rel === 'string' )  rel = parseInt( rel );
+    if( typeof rel === 'number' ){
         rel = ctx.relation[rel];
 //      console.log( "rel = " + JSON.stringify(rel,null,"  ") );  // _DEBUG_
     }
@@ -564,27 +732,30 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
         var ways;
         if( rel ){
             var rxRole = new RegExp(hOpt.role) || /$/;
-            ways = _.filter( rel.members, function(x){
+            ways = rel.members.filter( function(x){
                 return (x.type === 'way' && x.role.match(rxRole));
             } );
-            ways = _.map( ways, function(x){ return ctx.way[x.ref]; } );
-            ways = _.filter( ways, function(x){ return x; } );   // grep {defined} to allow handling incomplete relations
+            ways = ways.map( function(x){ return ctx.way[x.ref]; } );
+            ways = ways.map( function(x){ return x; } );   // grep {defined} to allow handling incomplete relations
         }else{
             ways = ctx.way;
         }
         if( hOpt.copy ){
-            ways = _.map( ways, function(x){ return _.cloneDeep(x); } );
-            ways = _.filter( ways, function(x){ return x; } );
+//          ways = ways.map( function(x){ return _.cloneDeep(x); } );
+            ways = ways.map( function(x){ return JSON.parse(JSON.stringify(x)); } );
+            ways = ways.filter( function(x){ return x; } );
         }
-        hWays = _.keyBy( ways, 'id' );
-        console.log( "hWays <" + _.size(hWays) + ">" );  // _DEBUG_
+        hWays = ogf.keyBy( ways, 'id' );
+//      console.log( "hWays <" + Object.keys(hWays).length + ">" );  // _DEBUG_
 //      console.log( "hWays = " + JSON.stringify(hWays,null,"  ") );  // _DEBUG_
     }
 
     var ptStart = {}, ptEnd = {};
     var relOrder = hOpt.relOrder || null;
 
-    _.forEach( hWays, function(way,wayId){
+//  _.forEach( hWays, function(way,wayId){
+    for( var wayId in hWays ){
+        var way = hWays[wayId];
         if( way.nodes.length < 2 ){
             console.log( 'ERROR: Way consisting of single node: ' + way.id );
             return;
@@ -598,9 +769,11 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
         }else{
             if( (ptStart[idStart] || ptEnd[idEnd]) && ! hOpt.wayDirection ){
                 var way2 = ptStart[idStart] || ptEnd[idEnd];
-                way2.nodes = _.reverse( way2.nodes );
+//              way2.nodes = _.reverse( way2.nodes );
+                way2.nodes.reverse();
                 if( hOpt.relOrder ){
-                    relOrder[way2.id] = _.reverse( relOrder[way2.id] );
+//                  relOrder[way2.id] = _.reverse( relOrder[way2.id] );
+                    relOrder[way2.id].reverse();
 //                  my @relWays = reverse @{$relOrder{$id}};
 //                  $relOrder{$relWays[0]} = delete $relOrder{$id};
                 }
@@ -636,12 +809,13 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
                 ptStart[way.nodes[0]] = ptEnd[way.nodes[way.nodes.length-1]] = way;
             }
         }
-    } );
+    }
 
     if( hOpt.relOrder )  hOpt.relOrder = relOrder;
     if( ! repeatFlag )  OGF.buildWaySequence( ctx, rel || null, hWays, hOpt );
 
-    return hOpt.relOrder ? _.sortBy( _.values(relOrder), function(x){ return x.length; } ) : _.values(hWays);
+//  return hOpt.relOrder ? _.sortBy( _.values(relOrder), function(x){ return x.length; } ) : _.values(hWays);
+    return hOpt.relOrder ? Object.values(relOrder).sort( function(a,b){ return a.length - b.length; } ) : Object.values(hWays);
 };
 
 
@@ -658,7 +832,7 @@ ogf.geoArea = function( ctx, obj, bbox, pr ){
     }
 
 //  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
-    if( _.isNumber(obj) ){
+    if( typeof obj === 'number' ){
         obj = ctx.relation[obj];
     }
 
@@ -697,8 +871,8 @@ ogf.geoArea = function( ctx, obj, bbox, pr ){
         }
         var aRelInner = ogf.buildWaySequence( ctx, obj, null, {role: 'inner'} );
         var area = 0;
-        _.forEach( aRelOuter, function(x){ area += ogf.geoArea(ctx,x,bbox); } );
-        _.forEach( aRelInner, function(x){ area -= ogf.geoArea(ctx,x,bbox); } );
+        aRelOuter.forEach( function(x){ area += ogf.geoArea(ctx,x,bbox); } );
+        aRelInner.forEach( function(x){ area -= ogf.geoArea(ctx,x,bbox); } );
         return area;
     }else{
         throw 'ERROR geoArea: Unsupported object type: ' + obj.type;
