@@ -544,11 +544,11 @@ ogf.boundaryRelation = function( layer, relId ){
     } );
 }
 
-//---begin publicTransport ---------------------------------------------------------------------------------------
+//--- begin publicTransport ---------------------------------------------------------------------------------------
 
 
 ogf.publicTransport = function( layer, routeIds ){
-//  console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
+    console.log( "routeIds = " + JSON.stringify(routeIds,null,"  ") );  // _DEBUG_
     var hInfo = {layer: layer};
     loadRouteData( routeIds, function(ctx){
         routeIds.forEach( function(relId){
@@ -564,7 +564,7 @@ ogf.publicTransport = function( layer, routeIds ){
 
 function drawRouteMasterLines( rel, ctx, hInfo ){
     var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
-    hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+    hInfo.color  = rel.tags.colour || '#000000';
     if (routes.length > 0){
         routes.forEach( function(mR){
             drawRoute( ctx.relation[mR.ref], ctx, hInfo );
@@ -576,7 +576,7 @@ function drawRouteMasterLines( rel, ctx, hInfo ){
 
 function drawRouteMasterStations( rel, ctx, hInfo ){
     var routes   = rel.members.filter( function(x){ return x.type === 'relation' && (x.role === '' || x.role === 'route'); } );
-    hInfo.color  = rel.tags.colour || rel.tags.color || '#000000';
+    hInfo.color  = rel.tags.colour || '#000000';
     if (routes.length > 0){
         routes.forEach( function(mR){
             drawStations( ctx.relation[mR.ref], ctx, hInfo );
@@ -592,15 +592,14 @@ function drawRoute( rel, ctx, hInfo ){
 //      console.log( "way = " + JSON.stringify(way,null,"  ") );  // _DEBUG_
         var line = ogf.wayPoints( way, ctx );
         var popupText = objText(rel);
-        var color = hInfo.color || hRoutes[rel.id] || '#000000';
-        // var color = hInfo.color || hRoutes[rel.id];
-        L.polyline( line, {color: color, weight: 5} ).addTo( hInfo.layer ).bindPopup( popupText );
+        var color = hInfo.color || '#000000';
+        L.polyline( line, {color: color, weight: 5} ).addTo( map ).bindPopup( popupText );
     } );
 }
 
 function drawStations( rel, ctx, hInfo) {
     var stations = rel.members.filter( function(x){ return x.type === 'node'     && (x.role === 'station' || x.role === 'stop' || x.role === 'forward:stop' || x.role === 'backward:stop'); } );
-    var color = hInfo.color || hRoutes[rel.id] || '#000000';
+    var color = hInfo.color || '#000000';
     stations.forEach( function(mS){
         var node = ctx.node[mS.ref];
         var popupText = objText(node, rel);
@@ -613,7 +612,6 @@ function loadRouteData( routeIds, cb ){
     query = routeIds.map( function(x){ return 'relation('+x+')'; } ).join(';');
     query = '(' + query + '); (._;>>;);';
 //  console.log( "query <" + query + ">" );  // _DEBUG_
-
     ogf.getOverpassData( query, function(ctx){
         ctx = ogf.typeMap( ctx );
 //      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
