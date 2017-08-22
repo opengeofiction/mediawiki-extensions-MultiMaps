@@ -478,6 +478,9 @@ ogf.keyBy = function( array, key ){
     return hObj;
 }
 
+ogf.values = function( obj ){
+    return Object.keys(obj).map( function(x){ return obj[x]; } );
+}
 
 
 ogf.getRelationData = function( relId, cb ){
@@ -768,7 +771,7 @@ ogf.buildWaySequence = function( ctx, rel, hWays, hOpt ){
     if( ! repeatFlag )  ogf.buildWaySequence( ctx, rel || null, hWays, hOpt );
 
 //  return hOpt.relOrder ? _.sortBy( _.values(relOrder), function(x){ return x.length; } ) : _.values(hWays);
-    return hOpt.relOrder ? Object.values(relOrder).sort( function(a,b){ return a.length - b.length; } ) : Object.values(hWays);
+    return hOpt.relOrder ? ogf.values(relOrder).sort( function(a,b){ return a.length - b.length; } ) : ogf.values(hWays);
 };
 
 
