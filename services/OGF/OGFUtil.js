@@ -8,16 +8,58 @@ var ogf = {
         WIKI_URL:       'http://wiki.opengeofiction.net/',
         NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
         ROUTING_URL:    'http://route.opengeofiction.net:5000/',
+        TERRITORY_URL:  'http://tile.opengeofiction.net/wiki/index.php/OGF:Territory_administration?action=raw',
     },
     icons: { red: null, yellow: null, green: null, blue: null },
+    linkText: {
+        ogfCopy:     '&copy; <a href="https://opengeofiction.net">OpenGeofiction</a> contributors',
+        osmCopy:     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        cc_by_sa:    '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+        cc_by_nc_sa: '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
+    },
+};
+ogf.baseMapsAvailable = {
+    Standard: {
+        ogf_shortcut: 'C',
+        tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
+        maxZoom: 19,
+        attribution: ogf.linkText.ogfCopy + ' ' + ogf.linkText.cc_by_nc_sa,
+    },
+    TopoMap: {
+        ogf_shortcut: 'T',
+        tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
+        maxZoom: 17,
+        attribution: 'map data: ' + ogf.linkText.ogfCopy + ' ' + ogf.linkText.cc_by_nc_sa +
+            ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + ogf.linkText.cc_by_sa,
+    },
+    Histor: {
+        ogf_shortcut: 'H',
+        tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
+        maxZoom: 18,
+        attribution: 'map data: ' + ogf.linkText.ogfCopy + ' ' + ogf.linkText.cc_by_nc_sa +
+            ' | map style: &copy; <a href="http://opengeofiction.net/user/histor">histor</a> - <a href="http://wiki.opengeofiction.net/wiki/index.php/OGF:Histor-style">more info</a>',
+    },
+    Roantra: {
+        ogf_shortcut: 'R',
+        tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
+        maxZoom: 14,
+        attribution: 'Copyright &copy; Thilo Stapff 2014',
+    },
+    OpenStreetMap: {
+        ogf_shortcut: 'OSM',
+        tileUrl: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        maxZoom: 19,
+        attribution: ogf.linkText.osmCopy,
+    },
+    OpenTopoMap: {
+        ogf_shortcut: 'OTM',
+        tileUrl: 'http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        maxZoom: 17,
+        attribution: 'map data: ' + ogf.linkText.osmCopy + ', <a href="http://viewfinderpanoramas.org/">SRTM</a>' +
+            ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + ogf.linkText.cc_by_sa,
+    },
 };
 
-var linkText = {
-    ogfCopy:     '&copy; <a href="https://opengeofiction.net">OpenGeofiction</a> contributors',
-    osmCopy:     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-    cc_by_sa:    '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-    cc_by_nc_sa: '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
-};
 
 if( L ){
     for( var color in ogf.icons ){
@@ -50,46 +92,15 @@ if( L ){
 
 //--------------------------------------------------------------------------------------------------
 
+
 ogf.map = function( leafletMap, options ){
-    var self = {};
-    self._map = leafletMap;
+    var self = {
+        _map:    leafletMap,
+        _layers: {},
+        _ogf:    true,
+    };
 //	if( leafletMap.attributionControl )  leafletMap.attributionControl.setPrefix( '' );
 
-    var baseMapsAvailable = {
-        Standard: {
-            tileUrl: ogf.config.TILES_URL +'/osmcarto/{z}/{x}/{y}.png',
-            maxZoom: 19,
-            attribution: linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa,
-        },
-        TopoMap: {
-            tileUrl: ogf.config.TILES_URL +'/topomap/{z}/{x}/{y}.png',
-            maxZoom: 17,
-            attribution: 'map data: ' + linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa +
-                ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + linkText.cc_by_sa,
-        },
-        Histor: {
-            tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
-            maxZoom: 18,
-            attribution: 'map data: ' + linkText.ogfCopy + ' ' + linkText.cc_by_nc_sa +
-                ' | map style: &copy; <a href="http://opengeofiction.net/user/histor">histor</a> - <a href="http://wiki.opengeofiction.net/wiki/index.php/OGF:Histor-style">more info</a>',
-        },
-        Roantra: {
-            tileUrl: ogf.config.TILES_URL +'/planet/Roantra/{z}/{x}/{y}.png',
-            maxZoom: 14,
-            attribution: 'Copyright &copy; Thilo Stapff 2014',
-        },
-        OpenStreetMap: {
-            tileUrl: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            maxZoom: 19,
-            attribution: linkText.osmCopy,
-        },
-        OpenTopoMap: {
-            tileUrl: 'http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-            maxZoom: 17,
-            attribution: 'map data: ' + linkText.osmCopy + ', <a href="http://viewfinderpanoramas.org/">SRTM</a>' +
-                ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + linkText.cc_by_sa,
-        },
-    };
     var overlaysAvailable = {
         'Coastline Errors': './CoastlineErrors.js',
         'Territories':      './Territories.js',
@@ -109,8 +120,8 @@ ogf.map = function( leafletMap, options ){
             keyB = keyB.replace(/^\+/,'');
             baseMapActive = keyB;
         }
-        var layerOpt = baseMapsAvailable[keyB];
-        baseMaps[keyB] = L.tileLayer( layerOpt.tileUrl, layerOpt );
+        var layerOpt = ogf.baseMapsAvailable[keyB];
+        baseMaps[keyB] = self._layers[layerOpt.ogf_shortcut] = L.tileLayer( layerOpt.tileUrl, layerOpt );
     }
 
     for( i = 0; i < overlaysEnabled.length; ++i ){
@@ -157,7 +168,7 @@ ogf.map = function( leafletMap, options ){
         }
     } );
 
-    L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
+    self._layerControl = L.control.layers( baseMaps, overlayMaps ).addTo( self._map );
     baseMaps[baseMapActive].addTo( self._map );
 
     for( keyO in hOverlaysActive ){
@@ -168,6 +179,14 @@ ogf.map = function( leafletMap, options ){
     return self;
 };
 
+ogf.clear = function( self ){
+    if( self._layerControl )  self._map.removeControl( self._layerControl );
+    self._map.eachLayer(function (layer) {
+        self._map.removeLayer(layer);
+    });
+    self._map.off( 'overlayadd' );
+    self._map.off( 'overlayremove' );
+}
 
 ogf.getApplyStruct = function( info, cb ){
 //	console.log( "info = " + JSON.stringify(info,null,"  ") );  // _DEBUG_
@@ -194,6 +213,9 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
         if( Array.isArray(struct) && info.key ){
             struct = ogf.mapArray( struct, info.key );
         }
+        if( info.filter ){
+            struct = ogf.valueFilter( struct, info.filter );
+        }
         if( info.wrap ){
             for( var k1 in struct ){
                 var elem = {};
@@ -215,6 +237,30 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
         }
     } );
 };
+
+ogf.valueFilter = function( struct, filter ){
+    var structNew = {};
+    var func;
+    if( typeof filter === 'string' ){
+        func = function( obj ){
+            return (filter in obj);
+        };
+    }else if( typeof filter === 'function' ){
+        func = filter;
+    }else{
+        func = function( obj ){
+            for( var key in filter ){
+                if( obj[key] !== filter[key] )  return false;
+            }
+            return true;
+        };
+    }
+    for( var key in struct ){
+        var val = struct[key];
+        if( func(val) )  structNew[key] = val;
+    }
+    return structNew;
+}
 
 ogf.mapArray = function( array, key ){
     var struct = {};
@@ -274,7 +320,7 @@ ogf.drawLayerObjects = function( objects, layer, map ){
 };
 
 ogf.drawLayerObject = function( obj, key, layer, map, controls ){
-//	console.log( "hObjects = " + JSON.stringify(hObjects,null,"  ") );  // _DEBUG_
+//	console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
     var popupOptions = {maxWidth: 600};
     var text = ogf.evalObjectText( obj, obj.text, key );
 
@@ -282,10 +328,13 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
         var coordList = obj.polygon;
         var options = {
             color:       obj.color       || '#111111',
-            weight:      obj.weight      || 1,
-            fillOpacity: obj.fillOpacity || .5,
             fillColor:   obj.fillColor   || '#999999',
+            weight:      ('weight' in obj)      ? obj.weight      : 1,
+            fillOpacity: ('fillOpacity' in obj) ? obj.fillOpacity : .5,
         };
+        if( obj.fillPattern ){
+            options.fillPattern = ogf.getFillPattern( obj.fillPattern, map );
+        }
         L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.icon ){
         var options = {};
@@ -304,6 +353,17 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
     }
 //	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
+
+ogf.fillPatterns = {};
+ogf.getFillPattern = function( fillPattern, map ){
+    var key = JSON.stringify( fillPattern );
+    if( ! ogf.fillPatterns[key] ){
+        var fp = ogf.fillPatterns[key] = new L.StripePattern( fillPattern );
+        fp.addTo( map );
+    }
+    return ogf.fillPatterns[key];
+}
+
 
 ogf.evalObjectText = function( obj, template, key ){
     if( ! template )  return "";
@@ -335,6 +395,7 @@ ogf.evalObjectText = function( obj, template, key ){
 
 
 ogf.parseUrlParam = function( str ){
+    if( ! str )  str = document.URL;
     var hParam = {};
     var regex = /[?&](\w+)=([^?&]*)/g;
     var match;
@@ -345,32 +406,53 @@ ogf.parseUrlParam = function( str ){
     return hParam;
 };
 
+ogf.parseLocation = function( str ){
+    var dsc = str.split('/');
+    var hInfo = {};
+    if( dsc[0].match(/^[A-Z]/) ){
+        hInfo.layer = dsc.shift();
+    }
+    hInfo.zoom = parseFloat(dsc[0]);
+    hInfo.lat  = parseFloat(dsc[1]);
+    hInfo.lon  = parseFloat(dsc[2]);  // lat, lon
+    return hInfo;
+};
+
+
 ogf.setUrlLocation = function( map, url, opt ){
     if( ! url )  url = document.URL;
     if( ! opt )  opt = {};
 
-	var map2;
+	var map2, ogfMap, ogfMap2;
     if( Array.isArray(map) ){
         map2 = map[1];
         map  = map[0];
     }
-    
+    if( map._ogf ){
+        ogfMap = map;
+        map    = map._map;
+    }
+    if( map2 && map2._ogf ){
+        ogfMap2 = map2;
+        map2    = map2._map;
+    }
+
     var hParam = ogf.parseUrlParam( url );
 //  console.log( "hParam = " + JSON.stringify(hParam,null,"  ") );  // _DEBUG_
     if( map && hParam.map ){
-        var loc = hParam.map.split('/');
-        var zoom = parseFloat(loc[0]), lat = parseFloat(loc[1]), lon = parseFloat(loc[2]);
+        var lc = ogf.parseLocation( hParam.map );
         if( opt.method === 'MapboxGL' ){
-            map.setZoom( zoom );
-            map.setCenter( [lon,lat] );
+            map.setZoom( lc.zoom );
+            map.setCenter( [lc.lon,lc.lat] );
         }else{
-            map.setView( [lat,lon], zoom );
+            map.setView( [lc.lat,lc.lon], lc.zoom );
+            if( ogfMap && lc.layer )  ogf.setBaseLayer( ogfMap, lc.layer );
         }
     }
     if( map2 && hParam.map2 ){
-        var loc2 = hParam.map2.split('/');
-        var lat2 = parseFloat(loc[1]), lon2 = parseFloat(loc[2]);
-        map2.panTo( [lat2,lon2] );
+        var lc2 = ogf.parseLocation( hParam.map2 );
+        map2.panTo( [lc2.lat,lc2.lon] );
+        if( ogfMap2 && lc2.layer )  ogf.setBaseLayer( ogfMap2, lc2.layer );
     }
     if( opt.layers ){
         var layer = hParam.layer || 'Standard';
@@ -389,11 +471,13 @@ ogf.setUrlLocation = function( map, url, opt ){
         var hOut = {};
         var zoom   = map.getZoom();
         var center = map.getCenter();
-        var query  = 'map=' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
+        var layer  = ogf.getBaseLayer( map );
+        var query  = 'map=' + layer + '/' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
 
         if( map2 ){
             var center2 = map2.getCenter();
-            query += '&map2=' + 'x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
+            var layer2  = ogf.getBaseLayer( map2 );
+            query += '&map2=' + layer2 + '/x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
         }
 
 //		query += '&layer=' + '';
@@ -422,6 +506,73 @@ ogf.setUrlLocation = function( map, url, opt ){
     return hParam;
 };
 
+ogf.getBaseLayer = function( map ){
+//  var ct = 0; console.log( '--- getCurrentbaseLayer ---' );
+    var layerShortcut;
+    map.eachLayer( function(layer){
+//      console.log( '' + (++ct) + ': ' + layer.options.ogf_shortcut );
+        if( layer.options.ogf_shortcut )  layerShortcut = layer.options.ogf_shortcut;
+    });
+    return layerShortcut;
+};
+
+ogf.setBaseLayer = function( ogfMap, layerShortcut ){
+//  console.log( '--- setCurrentbaseLayer --- ' + layerShortcut );
+    var map = ogfMap._map;
+    map.eachLayer( function(layer){
+        if( layer.options.ogf_shortcut && layerShortcut !== layer.options.ogf_shortcut ){
+            map.removeLayer( layer );
+        }
+    });
+//  console.log( "ogfMap._layers = " + JSON.stringify(Object.keys(ogfMap._layers),null,"  ") );  // _DEBUG_
+    ogfMap._layers[layerShortcut].addTo( map );
+};
+
+ogf.normalizedBbox = function( map, opt ){
+    if( ! opt )   opt = {};
+    var b = map.getBounds();
+    console.log( "b = " + JSON.stringify(b,null,"  ") );  // _DEBUG_
+
+    var bbox = '', x0 = b.getWest(), x1 = b.getEast(), y0 = b.getSouth(), y1 = b.getNorth();
+//	x0 = fmod( fmod(x0,360) + 540, 360 ) - 180;  // normalize x0 to interval [-180,180]
+//	x1 = fmod( fmod(x1,360) + 540, 360 ) - 180;  // fmod must be applied twice to handle negative values correctly
+    if( x1 - x0 < 360 ){
+	    x0 = fmod(x0+180,360) - 180;  // normalize x0,x1 to interval [-180,180]
+	    x1 = fmod(x1+180,360) - 180;
+    }else{
+        x0 = -180;
+        x1 =  180;
+	}
+
+    if( x1 - x0 < 360 ){
+        if( x1 < x0 ){
+            bbox = [ {w: x0, e: 180, s: y0, n: y1}, {w: -180, e: x1, s: y0, n: y1} ];
+        }else{
+            bbox = [ {w: x0, e: x1, s: y0, n: y1} ];
+        }
+        if( opt.fmt === 'overpass' ){
+//          bbox = '(' + y0 + ',' + x0 + ',' + y1 + ',' + x1 + ')';
+//          list[i] = '(' + b.s + ',' + b.w + ',' + b.n + ',' + b.e + ')';
+            bbox = bbox.map( function(b){ return '(' + b.s + ',' + b.w + ',' + b.n + ',' + b.e + ')'; } );
+        }else if( opt.fmt === 'api' ){
+//          bbox = '(' + y0 + ',' + x0 + ',' + y1 + ',' + x1 + ')';
+//          bbox[i] = '' + b.w + ',' + b.s + ',' + b.e + ',' + b.n;
+            bbox = bbox.map( function(b){ return '' + b.w + ',' + b.s + ',' + b.e + ',' + b.n; } );
+        }
+    }
+    console.log( "bbox = " + JSON.stringify(bbox,null,"  ") );  // _DEBUG_
+    return bbox;
+}
+
+function fmod( x, m ){
+    return (x - (Math.floor(x / m) * m));
+}
+
+//for( var x = -1000; x < 1000; x += 10 ){
+//  var xx = fmod( x, 360 );
+//  console.log( '' + x + ': ' + xx );
+//}
+
 
 
 ogf.runRequest = function( method, url, data, cb ){
@@ -429,8 +580,12 @@ ogf.runRequest = function( method, url, data, cb ){
         var req = new XMLHttpRequest();
         req.open( method, url, true );
         req.onreadystatechange = function(){
-            if( req.readyState == 4 && req.status == 200 ){
-                cb( req.responseText );
+            if( req.readyState == 4 ){
+                if( req.status == 200 ){
+                    cb( req.responseText );
+                }else{
+                    alert( 'ERROR:\n' + req.statusText );
+                }
             }
         };
         if( data ){
