@@ -336,6 +336,13 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
             options.fillPattern = ogf.getFillPattern( obj.fillPattern, map );
         }
         L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+    }else if( obj.polyline ){
+        var coordList = obj.polyline;
+        var options = {
+            color:       obj.color       || '#111111',
+            weight:      ('weight' in obj)      ? obj.weight      : 1,
+        };
+        L.polyline( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
     }else if( obj.icon ){
         var options = {};
         if( ogf.icons[obj.icon] ){
