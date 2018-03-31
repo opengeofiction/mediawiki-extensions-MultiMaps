@@ -2,18 +2,18 @@ function OGFUtil(){
 
 var ogf = {
     config: {
-        API_URL:        'http://opengeofiction.net/',
-        TILES_URL:      'http://tile.opengeofiction.net/',
-        TILESERVER_URL: 'http://tile.opengeofiction.net/',
-        WIKI_URL:       'http://wiki.opengeofiction.net/',
+        API_URL:        '//opengeofiction.net/',
+        TILES_URL:      '//tile.opengeofiction.net/',
+        TILESERVER_URL: '//tile.opengeofiction.net/',
+        WIKI_URL:       '//wiki.opengeofiction.net/',
         NOMINATIM_URL:  'http://nominatim.opengeofiction.net:8080/',
         ROUTING_URL:    'http://route.opengeofiction.net:5000/',
-        TERRITORY_URL:  'http://tile.opengeofiction.net/wiki/index.php/OGF:Territory_administration?action=raw',
+        TERRITORY_URL:  '//tile.opengeofiction.net/wiki/index.php/OGF:Territory_administration?action=raw',
     },
     icons: { red: null, yellow: null, green: null, blue: null },
     linkText: {
-        ogfCopy:     '&copy; <a href="https://opengeofiction.net">OpenGeofiction</a> contributors',
-        osmCopy:     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        ogfCopy:     '&copy; <a href="//opengeofiction.net">OpenGeofiction</a> contributors',
+        osmCopy:     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
         cc_by_sa:    '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
         cc_by_nc_sa: '(<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-NC-SA</a>)',
     },
@@ -37,7 +37,7 @@ ogf.baseMapsAvailable = {
         tileUrl: ogf.config.TILES_URL +'/tiles-histor/{z}/{x}/{y}.png',
         maxZoom: 18,
         attribution: 'map data: ' + ogf.linkText.ogfCopy + ' ' + ogf.linkText.cc_by_nc_sa +
-            ' | map style: &copy; <a href="http://opengeofiction.net/user/histor">histor</a> - <a href="http://wiki.opengeofiction.net/wiki/index.php/OGF:Histor-style">more info</a>',
+            ' | map style: &copy; <a href="//opengeofiction.net/user/histor">histor</a> - <a href="//wiki.opengeofiction.net/wiki/index.php/OGF:Histor-style">more info</a>',
     },
     Roantra: {
         ogf_shortcut: 'R',
@@ -47,13 +47,13 @@ ogf.baseMapsAvailable = {
     },
     OpenStreetMap: {
         ogf_shortcut: 'OSM',
-        tileUrl: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         maxZoom: 19,
         attribution: ogf.linkText.osmCopy,
     },
     OpenTopoMap: {
         ogf_shortcut: 'OTM',
-        tileUrl: 'http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        tileUrl: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
         maxZoom: 17,
         attribution: 'map data: ' + ogf.linkText.osmCopy + ', <a href="http://viewfinderpanoramas.org/">SRTM</a>' +
             ' | map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> ' + ogf.linkText.cc_by_sa,
@@ -611,7 +611,7 @@ ogf.getOverpassData = function( query, opt, cb ){
         cb = opt;
         opt = {};
     }
-    var url = 'http://osm3s.opengeofiction.net/api/interpreter';
+    var url = '//osm3s.opengeofiction.net/api/interpreter';
     query = "[out:json];\n" + query;
     query += (opt.max)? ("\nout " + opt.max + ";") : "\nout;"
     ogf.runRequest( 'POST', url, query, function(data){
