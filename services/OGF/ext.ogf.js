@@ -155,7 +155,7 @@ mediaWiki.MultiMapsOGF = {
 
 		map = L.map( element, mapOptions ).fitWorld();
 		var ogfMap = OGF.map( map, ogfOptions );
-        OGF.addFullscreenControl( ogfMap, {iconUrl: '/wiki/extensions/MultiMaps/services/OGF/if_fullscreen_326650.svg' );
+        OGF.addFullscreenControl( ogfMap, {iconUrl: '/wiki/extensions/MultiMaps/services/OGF/if_fullscreen_326650.svg'} );
 
 		// Add the markers.
 		if (options.markers !== undefined) {
