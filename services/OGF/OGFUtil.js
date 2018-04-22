@@ -99,7 +99,7 @@ if( L ){
             div.style.backgroundColor = '#FFFFFF';
             div.style.width  = '30px';
             div.style.height = '30px';
-            div.style.backgroundImage = 'url(if_fullscreen_326650.svg)';
+            div.style.backgroundImage = 'url(' + self.options.iconUrl + ')';
             div.style.backgroundRepeat = 'no-repeat';
             div.style.backgroundPosition = 'center';
             div.addEventListener( 'click', function(evt){
@@ -130,6 +130,7 @@ if( L ){
 //          div.innerHTML = this.options.text;
             return div;
         },
+        iconUrl: '/util/if_fullscreen_326650.svg',
     } );
 
     L.control.fullScreen = function( id, options ){
@@ -424,8 +425,8 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
 //	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
 
-ogf.addFullscreenControl = function( self ){
-    var fsc = L.control.fullScreen()
+ogf.addFullscreenControl = function( self, options ){
+    var fsc = L.control.fullScreen( options );
     fsc.addTo( self._map );
 }
 
