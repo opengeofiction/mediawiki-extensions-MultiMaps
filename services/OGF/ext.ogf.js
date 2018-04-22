@@ -134,9 +134,9 @@ mediaWiki.MultiMapsOGF = {
 //		if (options.minzoom !== false) {
 //			mapOptions.minZoom = options.minzoom;
 //		}
-		if (options.maxzoom !== false) {
-			mapOptions.maxZoom = options.maxzoom;
-		}
+//		if (options.maxzoom !== false) {
+//			mapOptions.maxZoom = options.maxzoom;
+//		}
         if (options.layers) {
             ogfOptions.layers = options.layers;
         }
@@ -155,6 +155,7 @@ mediaWiki.MultiMapsOGF = {
 
 		map = L.map( element, mapOptions ).fitWorld();
 		var ogfMap = OGF.map( map, ogfOptions );
+        OGF.addFullscreenControl( ogfMap );
 
 		// Add the markers.
 		if (options.markers !== undefined) {
