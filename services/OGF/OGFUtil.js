@@ -88,7 +88,56 @@ if( L ){
     L.control.infoBox = function( id, options ){
         return new L.Control.InfoBox( id, options );
     }
+
+    L.Control.FullScreen = L.Control.extend( {
+        options: {
+            position: 'topleft'
+        },
+        onAdd: function( map ){
+            var self = this;
+            var div = L.DomUtil.create( 'div', 'fullscreen-control leaflet-bar leaflet-control leaflet-control-custom' );
+            div.style.backgroundColor = '#FFFFFF';
+            div.style.width  = '30px';
+            div.style.height = '30px';
+            div.style.backgroundImage = 'url(if_fullscreen_326650.svg)';
+            div.style.backgroundRepeat = 'no-repeat';
+            div.style.backgroundPosition = 'center';
+            div.addEventListener( 'click', function(evt){
+                var mapElem = map.getContainer();
+                var isInFullScreen = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+                if( ! isInFullScreen ){
+                    if (mapElem.requestFullscreen) {
+                        mapElem.requestFullscreen();
+                    }else if( mapElem.mozRequestFullScreen ){
+                        mapElem.mozRequestFullScreen();
+                    }else if( mapElem.webkitRequestFullScreen) {
+                        mapElem.webkitRequestFullScreen();
+                    }else if( mapElem.msRequestFullscreen ){
+                        mapElem.msRequestFullscreen();
+                    }
+                }else{
+                    if( document.exitFullscreen ){
+                        document.exitFullscreen();
+                    }else if( document.mozCancelFullScreen ){
+                        document.mozCancelFullScreen();
+                    }else if( document.webkitExitFullscreen ){
+                        document.webkitExitFullscreen();
+                    }else if( document.msExitFullscreen ){
+                        document.msExitFullscreen();
+                    }
+                }
+            } );
+//          div.innerHTML = this.options.text;
+            return div;
+        },
+    } );
+
+    L.control.fullScreen = function( id, options ){
+        return new L.Control.FullScreen( id, options );
+    }
 }
+
+
 
 //--------------------------------------------------------------------------------------------------
 
@@ -96,8 +145,9 @@ if( L ){
 ogf.map = function( leafletMap, options ){
     var self = {
         _map:    leafletMap,
-        _layers: {},
         _ogf:    true,
+        _layers: {},
+        _overlayData: {},
     };
 //	if( leafletMap.attributionControl )  leafletMap.attributionControl.setPrefix( '' );
 
@@ -150,6 +200,7 @@ ogf.map = function( leafletMap, options ){
                 var hObjects = {};
                 ogf.loadOverlay( hObjects, 0, overlayDefinitions[name], function(hObjects){
                     hControls[name] = ogf.drawLayerObjects( hObjects, layer, self._map );
+                    self._overlayData[name] = hObjects;
                 } );
             }
         }
@@ -322,7 +373,8 @@ ogf.drawLayerObjects = function( objects, layer, map ){
 ogf.drawLayerObject = function( obj, key, layer, map, controls ){
 //	console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
     var popupOptions = {maxWidth: 600};
-    var text = ogf.evalObjectText( obj, obj.text, key );
+    var text = obj.text ? ogf.evalObjectText( obj, obj.text, key ) : null;
+    var mapObj;
 
     if( obj.polygon ){
         var coordList = obj.polygon;
@@ -335,14 +387,16 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
         if( obj.fillPattern ){
             options.fillPattern = ogf.getFillPattern( obj.fillPattern, map );
         }
-        L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+//      L.polygon( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+        mapObj = L.polygon( coordList, options ).addTo( layer );
     }else if( obj.polyline ){
         var coordList = obj.polyline;
         var options = {
             color:       obj.color       || '#111111',
             weight:      ('weight' in obj)      ? obj.weight      : 1,
         };
-        L.polyline( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+//      L.polyline( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
+        mapObj = L.polyline( coordList, options ).addTo( layer );
     }else if( obj.icon ){
         var options = {};
         if( ogf.icons[obj.icon] ){
@@ -352,14 +406,29 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
 			if( obj.iconAnchor )  iconOpt.iconAnchor = obj.iconAnchor;
             options.icon = L.icon( iconOpt );
         }
-        L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
+//      L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
+        mapObj = L.marker( [obj.lat,obj.lon], options ).addTo( layer );
     }else if( obj.control && obj.control === 'InfoBox' ){
         var infoBox = L.control.infoBox( {text: text} )
         infoBox.addTo( map );
         controls.push( infoBox );
     }
+
+    if( mapObj && text ){
+        mapObj.bindPopup( text, popupOptions );
+    }
+    if( mapObj && obj['function'] ){
+        obj['function']( obj, mapObj );
+    }
+
 //	delete obj.polygon; if( obj.icon )  console.log( "obj = " + JSON.stringify(obj,null,"  ") );  // _DEBUG_
 };
+
+ogf.addFullscreenControl = function( self ){
+    var fsc = L.control.fullScreen()
+    fsc.addTo( self._map );
+}
+
 
 ogf.fillPatterns = {};
 ogf.getFillPattern = function( fillPattern, map ){
@@ -458,7 +527,9 @@ ogf.setUrlLocation = function( map, url, opt ){
     }
     if( map2 && hParam.map2 ){
         var lc2 = ogf.parseLocation( hParam.map2 );
-        map2.panTo( [lc2.lat,lc2.lon] );
+        console.log( "lc2 = " + JSON.stringify(lc2,null,"  ") );  // _DEBUG_
+//      map2.panTo( [lc2.lat,lc2.lon] );
+        map2.setView( [lc2.lat,lc2.lon], 16 );  // fixed "infinite number of tiles" problems, actual zoom value doesn't matter here
         if( ogfMap2 && lc2.layer )  ogf.setBaseLayer( ogfMap2, lc2.layer );
     }
     if( opt.layers ){
@@ -491,7 +562,7 @@ ogf.setUrlLocation = function( map, url, opt ){
         if( opt.fields ){
             for( var i = 0; i < opt.fields.length; ++i ){
                 var field = opt.fields[i];
-//              console.log( "field <" + field + ">" );  // _DEBUG_
+                console.log( "field <" + field + ">" );  // _DEBUG_
                 var elem = document.getElementById( field );
 //              console.log( "elem <" + elem + ">" );  // _DEBUG_
                 query += '&' + field + '=' + encodeURIComponent(elem.value);
@@ -636,7 +707,7 @@ ogf.typeMap = function( struct ){
 
 ogf.keyBy = function( array, key ){
     var hObj = {};
-    array.forEach( function(x){  hObj[x[key]] = x;  } );
+    array.forEach( function(x){ if(x){ hObj[x[key]] = x; } } );
     return hObj;
 }
 
