@@ -261,12 +261,17 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
     var info = loadInfo[idx];
 
     ogf.getApplyStruct( info, function(struct){
-        var struct;
         if( Array.isArray(struct) && info.key ){
             struct = ogf.mapArray( struct, info.key );
         }
-        if( info.filter ){
-            struct = ogf.valueFilter( struct, info.filter );
+//      if( info.filter ){
+//          struct = ogf.valueFilter( struct, info.filter );
+//      }
+        if( info.pick ){
+            for( var k1 in struct ){
+                var val = struct[k1][info.pick];
+                struct[k1] = val;
+            }
         }
         if( info.wrap ){
             for( var k1 in struct ){
@@ -281,6 +286,9 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
             }
         }else{
             ogf.applyMap( hObjects, struct, info );
+        }
+        if( info.filter ){
+            hObjects = ogf.valueFilter( hObjects, info.filter );
         }
         if( idx+1 < loadInfo.length ){
             ogf.loadOverlay( hObjects, idx+1, loadInfo, cb );
@@ -344,6 +352,9 @@ ogf.applyMap = function( hObjects, hMap, info ){
             obj = hObjects[key];
             var mapKey = sel ? obj[sel] : key;
             if( ! Array.isArray(mapKey) )  mapKey = [ mapKey ];
+            if( info.substr ){
+                mapKey = mapKey.map( function(x){ return String.prototype.substr.apply(x,info.substr); } );
+            }
             for( var j = 0; j < mapKey.length; ++j ){
                 var mapObj = hMap[mapKey[j]];
                 if( mapObj ){
@@ -354,6 +365,7 @@ ogf.applyMap = function( hObjects, hMap, info ){
             }
         }
     }
+//  console.log( "hObjects = " + JSON.stringify(hObjects,function(k,v){ return (k === 'polygon')? null : v; },"  ") );  // _DEBUG_
 };
 
 ogf.drawLayerObjects = function( objects, layer, map ){
@@ -495,6 +507,35 @@ ogf.parseLocation = function( str ){
     return hInfo;
 };
 
+ogf.getUrlLocation = function( map, map2, opt ){
+    var hOut = {};
+    var zoom   = map.getZoom();
+    var center = map.getCenter();
+    var layer  = ogf.getBaseLayer( map );
+    var query  = 'map=' + layer + '/' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
+
+    if( map2 ){
+        var center2 = map2.getCenter();
+        var layer2  = ogf.getBaseLayer( map2 );
+        query += '&map2=' + layer2 + '/x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
+    }
+
+//  query += '&layer=' + '';
+    if( opt && opt.fields ){
+        for( var i = 0; i < opt.fields.length; ++i ){
+            var field = opt.fields[i];
+//          console.log( "field <" + field + ">" );  // _DEBUG_
+            var elem = document.getElementById( field );
+//          console.log( "elem <" + elem + ">" );  // _DEBUG_
+            query += '&' + field + '=' + encodeURIComponent(elem.value);
+        }
+    }
+    for( var key in hOut ){
+        query += key + '='
+    }
+
+    return query;
+}
 
 ogf.setUrlLocation = function( map, url, opt ){
     if( ! url )  url = document.URL;
@@ -546,33 +587,40 @@ ogf.setUrlLocation = function( map, url, opt ){
         } 
     }
 
+//    var moveEnd = function(){
+//        var hOut = {};
+//        var zoom   = map.getZoom();
+//        var center = map.getCenter();
+//        var layer  = ogf.getBaseLayer( map );
+//        var query  = 'map=' + layer + '/' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
+//
+//        if( map2 ){
+//            var center2 = map2.getCenter();
+//            var layer2  = ogf.getBaseLayer( map2 );
+//            query += '&map2=' + layer2 + '/x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
+//        }
+//
+////		query += '&layer=' + '';
+//        if( opt.fields ){
+//            for( var i = 0; i < opt.fields.length; ++i ){
+//                var field = opt.fields[i];
+//                console.log( "field <" + field + ">" );  // _DEBUG_
+//                var elem = document.getElementById( field );
+////              console.log( "elem <" + elem + ">" );  // _DEBUG_
+//                query += '&' + field + '=' + encodeURIComponent(elem.value);
+//            }
+//        }
+//        for( var key in hOut ){
+//            query += key + '='
+//        }
+//
+//        var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
+////      console.log( "newUrl <" + newUrl + ">" );  // _DEBUG_
+//        window.history.pushState( '', '', newUrl );
+//    };
+
     var moveEnd = function(){
-        var hOut = {};
-        var zoom   = map.getZoom();
-        var center = map.getCenter();
-        var layer  = ogf.getBaseLayer( map );
-        var query  = 'map=' + layer + '/' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
-
-        if( map2 ){
-            var center2 = map2.getCenter();
-            var layer2  = ogf.getBaseLayer( map2 );
-            query += '&map2=' + layer2 + '/x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
-        }
-
-//		query += '&layer=' + '';
-        if( opt.fields ){
-            for( var i = 0; i < opt.fields.length; ++i ){
-                var field = opt.fields[i];
-                console.log( "field <" + field + ">" );  // _DEBUG_
-                var elem = document.getElementById( field );
-//              console.log( "elem <" + elem + ">" );  // _DEBUG_
-                query += '&' + field + '=' + encodeURIComponent(elem.value);
-            }
-        }
-        for( var key in hOut ){
-            query += key + '='
-        }
-
+        var query = ogf.getUrlLocation( map, map2, opt );
         var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
 //      console.log( "newUrl <" + newUrl + ">" );  // _DEBUG_
         window.history.pushState( '', '', newUrl );
@@ -610,7 +658,7 @@ ogf.setBaseLayer = function( ogfMap, layerShortcut ){
 ogf.normalizedBbox = function( map, opt ){
     if( ! opt )   opt = {};
     var b = map.getBounds();
-    console.log( "b = " + JSON.stringify(b,null,"  ") );  // _DEBUG_
+//  console.log( "b = " + JSON.stringify(b,null,"  ") );  // _DEBUG_
 
     var bbox = '', x0 = b.getWest(), x1 = b.getEast(), y0 = b.getSouth(), y1 = b.getNorth();
 //	x0 = fmod( fmod(x0,360) + 540, 360 ) - 180;  // normalize x0 to interval [-180,180]
@@ -639,7 +687,7 @@ ogf.normalizedBbox = function( map, opt ){
             bbox = bbox.map( function(b){ return '' + b.w + ',' + b.s + ',' + b.e + ',' + b.n; } );
         }
     }
-    console.log( "bbox = " + JSON.stringify(bbox,null,"  ") );  // _DEBUG_
+//  console.log( "bbox = " + JSON.stringify(bbox,null,"  ") );  // _DEBUG_
     return bbox;
 }
 
@@ -685,8 +733,10 @@ ogf.getOverpassData = function( query, opt, cb ){
     }
     var url = '//osm3s.opengeofiction.net/api/interpreter';
     query = "[out:json];\n" + query;
-    query += (opt.max)? ("\nout " + opt.max + ";") : "\nout;"
+    query += (opt.max)? ("\nout " + opt.max + ";") : "\n"
+    query += (opt.meta)? "out meta;" : "out;";
     ogf.runRequest( 'POST', url, query, function(data){
+    console.log( "query <" + query + ">" );  // _DEBUG_
         var struct = JSON.parse( data );
 //		console.log( "struct = " + JSON.stringify(struct,null,"  ") );  // _DEBUG_
         cb( struct );
