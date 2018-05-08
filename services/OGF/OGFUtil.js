@@ -405,8 +405,8 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
     }else if( obj.polyline ){
         var coordList = obj.polyline;
         var options = {
-            color:       obj.color       || '#111111',
-            weight:      ('weight' in obj)      ? obj.weight      : 1,
+            color:  obj.color || '#111111',
+            weight: ('weight' in obj) ? obj.weight : 1,
         };
 //      L.polyline( coordList, options ).addTo( layer ).bindPopup( text, popupOptions );
         mapObj = L.polyline( coordList, options ).addTo( layer );
@@ -421,6 +421,18 @@ ogf.drawLayerObject = function( obj, key, layer, map, controls ){
         }
 //      L.marker( [obj.lat,obj.lon], options ).addTo( layer ).bindPopup( text, popupOptions );
         mapObj = L.marker( [obj.lat,obj.lon], options ).addTo( layer );
+    }else if( obj.divIcon ){
+        var divIconOpt = {className: 'div-icon-875469085', html: obj.divIcon};  // className necessary to get default styles
+        if( obj.iconAnchor )  divIconOpt.iconAnchor = obj.iconAnchor;
+        var divIcon = L.divIcon( divIconOpt );
+        var marker = L.marker( [obj.lat,obj.lon], {icon: divIcon} ).addTo( layer );
+        if( obj.style ){
+            var objStyle = obj.style;
+            var elemStyle = marker.getElement().style;
+            for( var key in objStyle ){
+                 elemStyle[key] = objStyle[key];
+            }
+        }
     }else if( obj.control && obj.control === 'InfoBox' ){
         var infoBox = L.control.infoBox( {text: text} )
         infoBox.addTo( map );
