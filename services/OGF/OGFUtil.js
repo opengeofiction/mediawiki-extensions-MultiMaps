@@ -264,9 +264,6 @@ ogf.loadOverlay = function( hObjects, idx, loadInfo, cb ){
         if( Array.isArray(struct) && info.key ){
             struct = ogf.mapArray( struct, info.key );
         }
-//      if( info.filter ){
-//          struct = ogf.valueFilter( struct, info.filter );
-//      }
         if( info.pick ){
             for( var k1 in struct ){
                 var val = struct[k1][info.pick];
@@ -310,7 +307,14 @@ ogf.valueFilter = function( struct, filter ){
     }else{
         func = function( obj ){
             for( var key in filter ){
-                if( obj[key] !== filter[key] )  return false;
+                if( Array.isArray(filter[key]) && Array.isArray(obj[key]) ){
+                    var n = filter[key].length;
+                    for( var i = 0; i < n; ++i ){
+                        if( obj[key].indexOf(filter[key][i]) < 0 )  return false;
+                    }
+                }else{ 
+                    if( obj[key] !== filter[key] )  return false;
+                }
             }
             return true;
         };
