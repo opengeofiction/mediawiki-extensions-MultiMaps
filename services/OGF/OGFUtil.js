@@ -393,7 +393,8 @@ ogf.applyMap = function( hObjects, hMap, info ){
         var sel = select[i];
         for( key in hObjects ){
             obj = hObjects[key];
-            var mapKey = sel ? obj[sel] : key;
+//          var mapKey = sel ? obj[sel] : key;
+            var mapKey = sel ? ogf.getPath(obj,sel) : key;
             if( ! Array.isArray(mapKey) )  mapKey = [ mapKey ];
             if( info.substr ){
                 mapKey = mapKey.map( function(x){ return String.prototype.substr.apply(x,info.substr); } );
@@ -401,9 +402,10 @@ ogf.applyMap = function( hObjects, hMap, info ){
             for( var j = 0; j < mapKey.length; ++j ){
                 var mapObj = hMap[mapKey[j]];
                 if( mapObj ){
-                    for( keyS in mapObj ){
-                        if( ! obj[keyS] )  obj[keyS] = mapObj[keyS];
-                    }
+//                  for( keyS in mapObj ){
+//                      if( ! obj[keyS] )  obj[keyS] = mapObj[keyS];
+//                  }
+                    ogf.mergeInto( obj, mapObj );
                 }
             }
         }
@@ -519,13 +521,8 @@ ogf.evalObjectText = function( obj, template, key ){
 		var val;
 		if( x1 === '#' ){
 		    val = key;
-		}else if( x1.match(/\./) ){
-		    var path = x1.split(/\./);
-            val = path.reduce( function(o,k){
-                return (o && o[k]) ? o[k] : null;
-            }, obj );
 		}else{
-		    val = obj[x1];
+		    val = ogf.getPath( obj, x1 );
 		}
         if( val ){
             if( Array.isArray(val) ){
@@ -862,6 +859,25 @@ ogf.keyBy = function( array, key ){
     var hObj = {};
     array.forEach( function(x){ if(x){ hObj[x[key]] = x; } } );
     return hObj;
+}
+
+ogf.getPath = function( obj, path ){
+    var val;
+    if( path.match(/\./) ){
+        var items = path.split(/\./);
+        val = items.reduce( function(o,k){
+            return (o && o[k]) ? o[k] : null;
+        }, obj );
+    }else{
+        val = obj[path];
+    }
+    return val;
+}
+
+ogf.mergeInto = function( tgt, src ){
+    for( var key in src ){
+        if( ! tgt[key] )  tgt[key] = src[key];
+    }
 }
 
 ogf.values = function( obj ){
