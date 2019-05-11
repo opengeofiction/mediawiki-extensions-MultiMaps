@@ -282,7 +282,7 @@ ogf.getApplyStruct = function( info, cb ){
 
             var struct = [];
             ogf.values( ctx.way ).forEach( function(way){
-                way.polyline = OGF.wayPoints( way.id, ctx );
+                way.polyline = ogf.wayPoints( way.id, ctx );
                 struct.push( way );
             } );
             ogf.values( ctx.node ).forEach( function(node){
@@ -794,7 +794,7 @@ ogf.overpassSearch = function( queryStr, opt, cb ){
     if( ! opt )  opt = {};
     var bbox = [''];
     if( opt.bboxMap ){
-        bbox = OGF.normalizedBbox( opt.bboxMap, {fmt: 'overpass'} );
+        bbox = ogf.normalizedBbox( opt.bboxMap, {fmt: 'overpass'} );
     }
     var types = opt.types || ['node', 'way', 'relation'];
 
@@ -819,7 +819,7 @@ ogf.overpassSearch = function( queryStr, opt, cb ){
     ovpQuery += ');';
     console.log( "ovpQuery <" + ovpQuery + ">" );  // _DEBUG_
 
-    OGF.getOverpassData( ovpQuery, opt, function(ctx){
+    ogf.getOverpassData( ovpQuery, opt, function(ctx){
 //      console.log( "ctx = " + JSON.stringify(ctx,null,"  ") );  // _DEBUG_
         cb( ctx );
     } );
