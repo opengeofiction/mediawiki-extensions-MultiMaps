@@ -914,7 +914,21 @@ ogf.getRelationData = function( relId, cb ){
 
 //--------------------------------------------------------------------------------------------------
 
-ogf.boundaryRelation = function( layer, relId ){
+ogf.boundaryRelation = function( layer, param ){
+    var relId = param, opt = {};
+    if( Array.isArray(param) ){
+        relId = param[0], opt = param[1];
+    }
+    if( ! opt )  opt = {};
+    var drawOpts = {
+        weight:  ('weight' in opt)? opt.weight : 1,
+        color:   opt.color || '#000000',
+        opacity: ('opacity' in opt)? opt.opacity : 1.0,
+        fillColor:   opt.fillColor || '#000000',
+        fillOpacity: ('fillOpacity' in opt)? opt.fillOpacity : 0.25,
+    };
+    var fillInterior = opt.fillInterior || false;
+
     var rlat = 90, rlon = 360;
     var worldPolygon    = [ [-rlat,-rlon], [-rlat,rlon], [rlat,rlon], [rlat,-rlon] ];
     var areaPolygon;
@@ -942,9 +956,11 @@ ogf.boundaryRelation = function( layer, relId ){
         } );
         Array.prototype.push.apply( closedWays, innerWays );
 
-        closedWays.unshift( worldPolygon );
+        if( ! fillInterior ){
+            closedWays.unshift( worldPolygon );
+        }
 //      areaPolygon = L.polygon( closedWays, {weight: 1.5} ).addTo( map );
-        areaPolygon = L.polygon( closedWays, {weight: 1, color: '#000000', fillColor: '#000000', fillOpacity: 0.25} ).addTo( layer );
+        areaPolygon = L.polygon( closedWays, drawOpts ).addTo( layer );
     } );
 }
 
