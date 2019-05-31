@@ -650,38 +650,6 @@ ogf.setUrlLocation = function( map, url, opt ){
         } 
     }
 
-//    var moveEnd = function(){
-//        var hOut = {};
-//        var zoom   = map.getZoom();
-//        var center = map.getCenter();
-//        var layer  = ogf.getBaseLayer( map );
-//        var query  = 'map=' + layer + '/' + zoom + '/' + center.lat.toFixed(5) + '/' + center.lng.toFixed(5);
-//
-//        if( map2 ){
-//            var center2 = map2.getCenter();
-//            var layer2  = ogf.getBaseLayer( map2 );
-//            query += '&map2=' + layer2 + '/x/' + center2.lat.toFixed(5) + '/' + center2.lng.toFixed(5);
-//        }
-//
-////		query += '&layer=' + '';
-//        if( opt.fields ){
-//            for( var i = 0; i < opt.fields.length; ++i ){
-//                var field = opt.fields[i];
-//                console.log( "field <" + field + ">" );  // _DEBUG_
-//                var elem = document.getElementById( field );
-////              console.log( "elem <" + elem + ">" );  // _DEBUG_
-//                query += '&' + field + '=' + encodeURIComponent(elem.value);
-//            }
-//        }
-//        for( var key in hOut ){
-//            query += key + '='
-//        }
-//
-//        var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
-////      console.log( "newUrl <" + newUrl + ">" );  // _DEBUG_
-//        window.history.pushState( '', '', newUrl );
-//    };
-
     var moveEnd = function(){
         var query = ogf.getUrlLocation( map, map2, opt );
         var newUrl = document.URL.replace( /\.html.*/, '.html?' + query );
@@ -703,7 +671,7 @@ ogf.getBaseLayer = function( map ){
 //      console.log( '' + (++ct) + ': ' + layer.options.ogf_shortcut );
         if( layer.options.ogf_shortcut )  layerShortcut = layer.options.ogf_shortcut;
     });
-    return layerShortcut;
+    return layerShortcut || 'C';
 };
 
 ogf.setBaseLayer = function( ogfMap, layerShortcut ){
@@ -852,7 +820,16 @@ ogf.typeMap = function( struct ){
             return x.type === type; 
         } ), 'id' );
     } );
+    ensureExists( hObj.relation, 'members', [] );
+    ensureExists( hObj.way, 'nodes', [] );
     return hObj;
+}
+
+function ensureExists( objects, key, defaultValue ){
+    var list = ogf.values( objects );
+    list.forEach( function(obj){
+        if( ! obj[key] )  obj[key] = defaultValue;
+    } );
 }
 
 ogf.keyBy = function( array, key ){
@@ -1052,10 +1029,18 @@ function objText( obj ){
 ogf.wayPoints = function( way, ctx ){
 	if( !(typeof way === 'object') )  way = ctx.way[way];
 	var hNodes = ctx.node;
+	var missingNodes = [];
     var points = way.nodes.map( function(nodeId){
         var node = hNodes[nodeId];
+        if( ! node ){
+            missingNodes.push( nodeId );
+            return null;
+        }
         return {lat: node.lat, lng: node.lon};
     } );
+    if( missingNodes.length > 0 ){
+        alert( 'Missing nodes:\n' + missingNodes.join('\n') );
+    }
     return points;
 };
 
